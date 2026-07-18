@@ -1,12 +1,12 @@
 # TRD：Footprint Map
 
-**职责：** 将 REQ-004 v0.13 转化为可实施的技术基线，定义技术选型、代码层级、核心接口、数据格式、渲染流程、错误模型、测试范围与发布产物。
+**职责：** 将 REQ-004 v0.22 转化为可实施的技术基线，定义技术选型、代码层级、核心接口、数据格式、渲染流程、错误模型、测试范围与发布产物。
 
 ## 文档状态
 
 - 状态：技术设计草案，待实施前审阅。
 - TRD 版本：v0.1。
-- 需求基线：[[../../Requirements/REQ-004-可移植Markdown互动足迹地图|REQ-004 v0.13]]。
+- 需求基线：[[../../Requirements/REQ-004-可移植Markdown互动足迹地图|REQ-004 v0.22]]。
 - 项目设计：[[design|设计图]]、[[interaction|交互图]]、[[visual|效果图]]。
 - 实施状态：MVP 源码、自动化测试、Obsidian 包与 standalone 产物已创建；待真实宿主和照片样本验收。
 
@@ -45,15 +45,16 @@
 - 渲染层不向业务层暴露 Leaflet 类型，方便未来替换渲染库。
 - 选型依据：[Leaflet API](https://leafletjs.com/reference)、[Leaflet GeoJSON](https://leafletjs.com/examples/geojson/)。
 
-### ADR-002A：高德 JS API 2.0 作为中国大陆可选渲染器
+### ADR-002A：高德静态地图作为中国大陆可选底图
 
 - 通过 `tileProvider: amap` 显式选择，不破坏现有 `osm` 配置。
-- Key 与可选 `securityJsCode` 只保存在宿主设置；源码、Markdown、GeoJSON 和 release 包不写入凭据。
+- 使用官方 Web 服务字面量端点 `https://restapi.amap.com/v3/staticmap`，不动态加载第三方 JavaScript，不拼接或隐藏域名。
+- 只接受“Web 服务 API Key”，凭据值保存在 Obsidian SecretStorage；源码、Markdown、GeoJSON 和 release 包不写入凭据。旧 JS API Key 与安全码不自动复用。
 - GeoJSON 继续保存 WGS84；渲染时由插件内的纯 TypeScript 算法转换为 GCJ-02，避免依赖高德在线坐标转换服务。
-- 照片 Marker、地图外横向照片浏览区、虚线 Polyline、方向箭头与视野适配由高德适配器实现，领域层不依赖高德类型。
-- 高德脚本与底图属于显式联网能力，失败时进入现有错误/静态图降级路径；坐标转换可离线完成。
-- 高德首次视野适配等待地图 `complete` 与容器非零稳定尺寸，并以 `ResizeObserver` 处理 Obsidian 阅读模式的延迟布局；首次成功后停止自动适配，避免覆盖用户操作。
-- 作为 Markdown 内嵌组件，高德设置 `scrollWheel: false`、Leaflet 设置 `scrollWheelZoom: false`，让桌面滚动事件继续服务于文档浏览，同时保留主动地图交互。
+- 静态图作为 Leaflet `ImageOverlay` 的底层 pane；照片 Marker、地图外横向照片浏览区、虚线 Polyline、方向箭头与视野适配复用同一 Leaflet 控制器。
+- 静态图仅在初始布局完成以及 `moveend` / `zoomend` 后防抖刷新，使用 `scale=2` 与受限的图片尺寸，不预取、不批量缓存。
+- 请求失败时移除无效底图并显示警告，本地点位、连线、箭头、时间轴和照片仍可使用。
+- 作为 Markdown 内嵌组件，Leaflet 设置 `scrollWheelZoom: false`，让桌面滚动事件继续服务于文档浏览，同时保留主动地图交互。
 
 ### ADR-003：`exifr` 作为 EXIF 解析实现
 

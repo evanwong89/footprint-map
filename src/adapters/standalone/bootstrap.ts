@@ -3,12 +3,34 @@ import { OPEN_STREET_MAP_TILES } from "../../platform/tile-provider";
 import { FootprintMapController } from "../../renderer/map-controller";
 import { element } from "../../renderer/dom";
 import { BrowserResourceResolver } from "./browser-resources";
-import { AMapController } from "../../renderer/amap-map-controller";
 import type { MapController } from "../../renderer/controller";
 import { createI18n } from "../../i18n";
+import { wgs84ToGcj02 } from "../../renderer/amap-coordinate-conversion";
+
+if (typeof globalThis.createEl !== "function") {
+  Object.defineProperty(globalThis, "createEl", {
+    configurable: true,
+    value: <K extends keyof HTMLElementTagNameMap>(tag: K): HTMLElementTagNameMap[K] => (
+      document.createElementNS("http://www.w3.org/1999/xhtml", tag) as HTMLElementTagNameMap[K]
+    ),
+  });
+}
 
 let controller: MapController | undefined;
 const i18n = createI18n("en", "en");
+
+const readSource = (source: string): Promise<string> => new Promise((resolve, reject) => {
+  const request = new XMLHttpRequest();
+  request.open("GET", source);
+  request.addEventListener("load", () => {
+    if (request.status >= 200 && request.status < 300) resolve(request.responseText);
+    else reject(new Error(`FM_SOURCE_NOT_FOUND: ${request.status} ${request.statusText}`));
+  }, { once: true });
+  request.addEventListener("error", () => {
+    reject(new Error("FM_SOURCE_NOT_FOUND: The standalone source request failed."));
+  }, { once: true });
+  request.send();
+});
 
 const renderError = (container: HTMLElement, error: unknown): void => {
   container.replaceChildren();
@@ -28,23 +50,21 @@ const loadSource = async (
   const container = document.querySelector<HTMLElement>("#footprint-map");
   if (!container) return;
   try {
-    const response = await fetch(source);
-    if (!response.ok) throw new Error(`FM_SOURCE_NOT_FOUND: ${response.status} ${response.statusText}`);
-    const model = loadFootprint(await response.text());
+    const model = loadFootprint(await readSource(source));
     controller?.destroy();
     const resourceResolver = new BrowserResourceResolver();
     if (tilesEnabled && provider === "amap") {
       const config = window.FOOTPRINT_MAP_AMAP_CONFIG;
-      if (!config?.key.trim()) throw new Error("FM_STANDALONE_AMAP_KEY_REQUIRED: AMap Web key is missing.");
-      const credentials = config.securityJsCode?.trim()
-        ? { key: config.key, securityJsCode: config.securityJsCode }
-        : { key: config.key };
-      controller = await AMapController.create({
+      const key = config?.webServiceKey.trim() ?? "";
+      if (!key) throw new Error("FM_STANDALONE_AMAP_KEY_REQUIRED: AMap Web Service key is missing.");
+      controller = new FootprintMapController({
         container,
         model,
         resourceResolver,
         resourceBasePath: source,
-        credentials,
+        tileProvider: null,
+        coordinateTransform: wgs84ToGcj02,
+        amapStaticMap: { key },
         height: 520,
         i18n,
       });

@@ -68,7 +68,7 @@ export const verifyRelease = async (root = process.cwd()) => {
   }
 
   const config = await readFile(resolve(root, "standalone/amap-config.js"), "utf8");
-  for (const field of ["key", "securityJsCode"]) {
+  for (const field of ["webServiceKey"]) {
     const match = config.match(new RegExp(`${field}\\s*:\\s*["']([^"']*)["']`));
     if (!match) errors.push(`Unable to verify standalone AMap ${field}.`);
     else if (match[1].trim()) errors.push(`standalone/amap-config.js contains a non-empty ${field}.`);
@@ -82,7 +82,7 @@ export const verifyRelease = async (root = process.cwd()) => {
 
   const bundle = await readFile(resolve(root, "release/footprint-map/main.js"), "utf8");
   if (/sourceMappingURL=/.test(bundle)) errors.push("Production main.js contains a source map reference.");
-  if (/\b(?:amapKey|securityJsCode)\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']/.test(bundle)) {
+  if (/\b(?:amapKey|webServiceKey|securityJsCode)\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']/.test(bundle)) {
     errors.push("Production main.js may contain a hard-coded AMap credential.");
   }
 

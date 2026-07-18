@@ -1,4 +1,5 @@
 import L, {
+  type ImageOverlay,
   type LatLngBoundsExpression,
   type Map as LeafletMap,
   type Marker,
@@ -10,6 +11,16 @@ import type { TileProviderConfig } from "../platform/tile-provider";
 import type { I18n } from "../i18n";
 import { element } from "./dom";
 import type { MapController } from "./controller";
+import { createAMapStaticMapImage } from "./amap-static-map";
+
+export type CoordinateTransform = (
+  longitude: number,
+  latitude: number,
+) => readonly [longitude: number, latitude: number];
+
+export interface AMapStaticMapConfig {
+  key: string;
+}
 
 export interface MapRenderOptions {
   container: HTMLElement;
@@ -17,14 +28,21 @@ export interface MapRenderOptions {
   resourceResolver: ResourceResolver;
   resourceBasePath: string;
   tileProvider?: TileProviderConfig | null;
+  coordinateTransform?: CoordinateTransform;
+  amapStaticMap?: AMapStaticMapConfig;
   height?: number;
   i18n: I18n;
 }
 
-const toLatLng = (visit: VisitViewModel): [number, number] => [
-  visit.coordinates.latitude,
-  visit.coordinates.longitude,
-];
+const toLatLng = (
+  coordinates: { longitude: number; latitude: number },
+  transform?: CoordinateTransform,
+): [number, number] => {
+  const [longitude, latitude] = transform
+    ? transform(coordinates.longitude, coordinates.latitude)
+    : [coordinates.longitude, coordinates.latitude];
+  return [latitude, longitude];
+};
 
 export const createVisitMarkerContent = (
   visit: VisitViewModel,
@@ -125,26 +143,35 @@ export const selectTimelineVisit = (root: HTMLElement, visitId: string): void =>
   }
 };
 
-const segmentAngle = (map: LeafletMap, segment: SequenceSegment): number => {
-  const from = map.latLngToContainerPoint([segment.from.latitude, segment.from.longitude]);
-  const to = map.latLngToContainerPoint([segment.to.latitude, segment.to.longitude]);
+interface DisplaySegment {
+  source: SequenceSegment;
+  from: [number, number];
+  to: [number, number];
+}
+
+const segmentAngle = (map: LeafletMap, segment: DisplaySegment): number => {
+  const from = map.latLngToContainerPoint(segment.from);
+  const to = map.latLngToContainerPoint(segment.to);
   return Math.atan2(to.y - from.y, to.x - from.x) * (180 / Math.PI);
 };
 
-const segmentMidpoint = (segment: SequenceSegment): [number, number] => [
-  (segment.from.latitude + segment.to.latitude) / 2,
-  (segment.from.longitude + segment.to.longitude) / 2,
+const segmentMidpoint = (segment: DisplaySegment): [number, number] => [
+  (segment.from[0] + segment.to[0]) / 2,
+  (segment.from[1] + segment.to[1]) / 2,
 ];
 
 export class FootprintMapController implements MapController {
   private readonly map: LeafletMap;
   private readonly root: HTMLElement;
   private readonly issuesRegion: HTMLElement;
-  private readonly arrowMarkers: Array<{ marker: Marker; segment: SequenceSegment }> = [];
+  private readonly arrowMarkers: Array<{ marker: Marker; segment: DisplaySegment }> = [];
   private readonly updateArrows: () => void;
   private readonly cleanupInitialFit: () => void;
+  private cleanupStaticMap: () => void = () => undefined;
   private tileLayer: TileLayer | undefined;
+  private staticImageLayer: ImageOverlay | undefined;
   private tileErrorCount = 0;
+  private basemapWarningShown = false;
 
   constructor(private readonly options: MapRenderOptions) {
     const { container, model, i18n } = options;
@@ -173,7 +200,9 @@ export class FootprintMapController implements MapController {
       zoomControl: true,
       attributionControl: true,
       scrollWheelZoom: false,
-      zoomSnap: 0.25,
+      zoomSnap: options.amapStaticMap ? 1 : 0.25,
+      minZoom: options.amapStaticMap ? 2 : undefined,
+      maxZoom: options.amapStaticMap ? 18 : undefined,
     });
     if (options.tileProvider) {
       this.tileLayer = L.tileLayer(options.tileProvider.urlTemplate, {
@@ -184,26 +213,36 @@ export class FootprintMapController implements MapController {
       this.tileLayer.addTo(this.map);
     }
 
-    const bounds: LatLngBoundsExpression = model.visits.map(toLatLng);
+    if (options.amapStaticMap) {
+      this.configureAMapStaticBasemap(mapElement, options.amapStaticMap);
+    }
+
+    const positions = new Map(model.visits.map((visit) => [
+      visit.id,
+      toLatLng(visit.coordinates, options.coordinateTransform),
+    ]));
+    const bounds: LatLngBoundsExpression = model.visits.map((visit) => positions.get(visit.id)!);
     for (const segment of model.segments) {
+      const displaySegment: DisplaySegment = {
+        source: segment,
+        from: toLatLng(segment.from, options.coordinateTransform),
+        to: toLatLng(segment.to, options.coordinateTransform),
+      };
       L.polyline(
-        [
-          [segment.from.latitude, segment.from.longitude],
-          [segment.to.latitude, segment.to.longitude],
-        ],
+        [displaySegment.from, displaySegment.to],
         { color: "#e2673d", weight: 2, opacity: 0.9, dashArray: "9 9", lineCap: "round" },
       ).addTo(this.map);
-      const marker = L.marker(segmentMidpoint(segment), {
+      const marker = L.marker(segmentMidpoint(displaySegment), {
         interactive: false,
         keyboard: false,
         icon: L.divIcon({ className: "footprint-map-arrow", html: "<span>➤</span>", iconSize: [14, 14], iconAnchor: [7, 7] }),
       }).addTo(this.map);
-      this.arrowMarkers.push({ marker, segment });
+      this.arrowMarkers.push({ marker, segment: displaySegment });
     }
 
     for (const visit of model.visits) {
       const markerContent = createVisitMarkerContent(visit, options.resourceResolver, options.resourceBasePath, i18n);
-      const marker = L.marker(toLatLng(visit), {
+      const marker = L.marker(positions.get(visit.id)!, {
         icon: L.divIcon({
           className: "footprint-map-marker-host",
           html: markerContent,
@@ -230,7 +269,7 @@ export class FootprintMapController implements MapController {
     }
 
     const fit = (): void => {
-      if (model.visits.length === 1) this.map.setView(toLatLng(model.visits[0]!), 14);
+      if (model.visits.length === 1) this.map.setView(positions.get(model.visits[0]!.id)!, 14);
       else this.map.fitBounds(bounds, {
         paddingTopLeft: [48, 104],
         paddingBottomRight: [48, 24],
@@ -280,18 +319,83 @@ export class FootprintMapController implements MapController {
 
   }
 
-  private readonly handleTileError = (): void => {
-    this.tileErrorCount += 1;
-    if (this.tileErrorCount < 3 || !this.tileLayer) return;
-    this.tileLayer.off("tileerror", this.handleTileError);
-    this.tileLayer.remove();
-    this.tileLayer = undefined;
+  private configureAMapStaticBasemap(
+    mapElement: HTMLElement,
+    config: AMapStaticMapConfig,
+  ): void {
+    const paneName = "footprint-map-amap-static-basemap";
+    const pane = this.map.createPane(paneName);
+    pane.style.zIndex = "200";
+    pane.style.pointerEvents = "none";
+    this.map.attributionControl.addAttribution('<a href="https://www.amap.com/">AMap</a>');
+
+    let timer: number | undefined;
+    let requestSequence = 0;
+    let destroyed = false;
+    const refresh = (): void => {
+      if (destroyed || mapElement.clientWidth < 100 || mapElement.clientHeight < 100) return;
+      const center = this.map.getCenter();
+      const image = createAMapStaticMapImage({
+        key: config.key,
+        longitude: center.lng,
+        latitude: center.lat,
+        leafletZoom: this.map.getZoom(),
+        viewportWidth: mapElement.clientWidth,
+        viewportHeight: mapElement.clientHeight,
+      });
+      const sequence = ++requestSequence;
+      const nextLayer = L.imageOverlay(image.url, this.map.getBounds(), {
+        pane: paneName,
+        interactive: false,
+      });
+      nextLayer.once("load", () => {
+        if (destroyed || sequence !== requestSequence) {
+          nextLayer.remove();
+          return;
+        }
+        this.staticImageLayer?.remove();
+        this.staticImageLayer = nextLayer;
+      });
+      nextLayer.once("error", () => {
+        nextLayer.remove();
+        if (!destroyed && sequence === requestSequence) this.showBasemapWarning();
+      });
+      nextLayer.addTo(this.map);
+    };
+    const schedule = (): void => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = window.setTimeout(refresh, 180);
+    };
+    this.map.on("moveend zoomend", schedule);
+    this.map.whenReady(schedule);
+    this.cleanupStaticMap = () => {
+      destroyed = true;
+      requestSequence += 1;
+      if (timer !== undefined) window.clearTimeout(timer);
+      this.map.off("moveend zoomend", schedule);
+      this.staticImageLayer?.remove();
+      this.staticImageLayer = undefined;
+    };
+  }
+
+  private showBasemapWarning(): void {
+    if (this.basemapWarningShown) return;
+    this.basemapWarningShown = true;
     this.issuesRegion.hidden = false;
     this.issuesRegion.append(element(
       "p",
       "footprint-map-basemap-warning",
       this.options.i18n.t("basemapUnavailable"),
     ));
+  }
+
+  private readonly handleTileError = (): void => {
+    this.tileErrorCount += 1;
+    if (this.tileErrorCount < 3 || !this.tileLayer) return;
+    this.tileLayer.off("tileerror", this.handleTileError);
+    this.tileLayer.remove();
+    this.tileLayer = undefined;
+    this.showBasemapWarning();
   };
 
   private createIssues(model: FootprintViewModel): HTMLElement {
@@ -305,6 +409,7 @@ export class FootprintMapController implements MapController {
 
   destroy(): void {
     this.cleanupInitialFit();
+    this.cleanupStaticMap();
     this.tileLayer?.off("tileerror", this.handleTileError);
     this.map.off("zoomend moveend", this.updateArrows);
     this.map.remove();

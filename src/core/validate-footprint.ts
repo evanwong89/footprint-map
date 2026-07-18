@@ -68,7 +68,8 @@ const parseVisit = (
       issues: [warning("FM_VISIT_INVALID_GEOMETRY", "到访点 geometry 必须是 Point，已忽略。", { featureIndex })],
     };
   }
-  const [longitude, latitude] = geometry.coordinates;
+  const longitude: unknown = geometry.coordinates[0];
+  const latitude: unknown = geometry.coordinates[1];
   if (
     typeof longitude !== "number" ||
     typeof latitude !== "number" ||
