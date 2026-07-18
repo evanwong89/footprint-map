@@ -59,7 +59,11 @@ export const verifyRelease = async (root = process.cwd()) => {
   if (versions[manifest.version] !== manifest.minAppVersion) {
     errors.push("versions.json does not map the current plugin version to manifest.minAppVersion.");
   }
-  if (process.env.GITHUB_REF_NAME && process.env.GITHUB_REF_NAME !== manifest.version) {
+  if (
+    process.env.GITHUB_REF_TYPE === "tag"
+    && process.env.GITHUB_REF_NAME
+    && process.env.GITHUB_REF_NAME !== manifest.version
+  ) {
     errors.push(`Git tag ${process.env.GITHUB_REF_NAME} must exactly match manifest version ${manifest.version}.`);
   }
 
