@@ -8,6 +8,8 @@ Footprint Map renders a local, time-ordered travel diary from photo locations in
 
 *Visualize a day's photo journey on an interactive map, with time-ordered places, photo galleries, and a synchronized timeline.*
 
+[Map data © OpenStreetMap contributors](https://www.openstreetmap.org/copyright)
+
 ## Features
 
 - Generate visits from embedded JPEG, HEIC, and PNG photo metadata.
