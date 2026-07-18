@@ -325,8 +325,7 @@ export class FootprintMapController implements MapController {
   ): void {
     const paneName = "footprint-map-amap-static-basemap";
     const pane = this.map.createPane(paneName);
-    pane.style.zIndex = "200";
-    pane.style.pointerEvents = "none";
+    pane.classList.add("footprint-map-amap-static-pane");
     this.map.attributionControl.addAttribution('<a href="https://www.amap.com/">AMap</a>');
 
     let timer: number | undefined;

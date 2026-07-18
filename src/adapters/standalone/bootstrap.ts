@@ -7,8 +7,8 @@ import type { MapController } from "../../renderer/controller";
 import { createI18n } from "../../i18n";
 import { wgs84ToGcj02 } from "../../renderer/amap-coordinate-conversion";
 
-if (typeof globalThis.createEl !== "function") {
-  Object.defineProperty(globalThis, "createEl", {
+if (typeof window.createEl !== "function") {
+  Object.defineProperty(window, "createEl", {
     configurable: true,
     value: <K extends keyof HTMLElementTagNameMap>(tag: K): HTMLElementTagNameMap[K] => (
       document.createElementNS("http://www.w3.org/1999/xhtml", tag) as HTMLElementTagNameMap[K]
