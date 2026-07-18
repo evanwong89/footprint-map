@@ -4,6 +4,10 @@ Footprint Map renders a local, time-ordered travel diary from photo locations in
 
 中文说明见 [简体中文](#简体中文)。
 
+![Footprint Map showing time-ordered photo places, the selected place gallery, and the synchronized timeline.](assets/footprint-map-daily-footprint.png)
+
+*Visualize a day's photo journey on an interactive map, with time-ordered places, photo galleries, and a synchronized timeline.*
+
 ## Features
 
 - Generate visits from embedded JPEG, HEIC, and PNG photo metadata.
