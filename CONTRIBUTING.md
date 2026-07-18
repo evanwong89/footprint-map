@@ -17,7 +17,7 @@ For local Obsidian testing, copy `release/footprint-map/main.js`, `manifest.json
 
 - Keep footprint data and rendering core independent from Obsidian-specific APIs.
 - Do not add telemetry, advertising, or background network requests.
-- Never commit API keys, `securityJsCode`, tokens, real vaults, private photos, or location history.
+- Never commit API keys, tokens, real vaults, private photos, or location history.
 - Use synthetic or explicitly publishable fixtures.
 - Preserve provider attribution and document any new network service.
 - Add or update tests for behaviour changes.

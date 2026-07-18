@@ -7,7 +7,7 @@
   --fm-panel: var(--background-primary, #fffdf8);
   --fm-border: var(--background-modifier-border, #ded8cc);
   color: var(--fm-ink);
-  font-family: var(--font-interface, ui-sans-serif, system-ui, sans-serif);
+  font-family: var(--font-interface, system-ui, sans-serif);
 }
 
 .footprint-map-header,
@@ -22,7 +22,7 @@
 .footprint-map-title,
 .footprint-map-header p { margin: 0; }
 .footprint-map-title { font-size: 1.15rem; }
-.footprint-map-legend { color: var(--fm-muted); font-size: .78rem; margin-top: 3px !important; }
+.footprint-map-header .footprint-map-legend { color: var(--fm-muted); font-size: .78rem; margin-top: 3px; }
 
 .footprint-map-fit,
 .footprint-map-source-form button {
@@ -73,14 +73,14 @@
   width: 1.5cm;
 }
 .footprint-map-root .footprint-map-place-preview > img {
-  display: block !important;
-  height: 100% !important;
-  max-height: none !important;
-  max-width: none !important;
-  object-fit: cover !important;
-  object-position: center center !important;
+  display: block;
+  height: 100%;
+  max-height: none;
+  max-width: none;
+  object-fit: cover;
+  object-position: center center;
   pointer-events: none;
-  width: 100% !important;
+  width: 100%;
 }
 .footprint-map-place-fallback { font-size: 16px; font-weight: 800; }
 .footprint-map-place-sequence {

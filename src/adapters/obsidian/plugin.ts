@@ -7,7 +7,6 @@ import { serializeFootprintGeoJson } from "../../core/serialize-footprint";
 import { validateFootprintGeoJson } from "../../core/validate-footprint";
 import { ExifrPhotoMetadataReader } from "../../metadata/exifr-reader";
 import { renderStaticSvg } from "../../renderer/static-svg-renderer";
-import type { AMapCredentials } from "../../renderer/amap-loader";
 import { createI18n, type I18n } from "../../i18n";
 import { parseCodeBlockConfig } from "./code-block-config";
 import { FootprintRenderChild } from "./footprint-render-child";
@@ -15,12 +14,12 @@ import { basename, dirname, resolveVaultPath } from "./vault-path";
 import { DEFAULT_SETTINGS, FootprintMapSettingTab, type FootprintMapSettings } from "./settings";
 
 const isSupportedPhoto = (file: TFile): boolean => ["jpg", "jpeg", "heic", "png"].includes(file.extension.toLowerCase());
-const AMAP_KEY_SECRET_ID = "footprint-map-amap-web-key";
-const AMAP_SECURITY_CODE_SECRET_ID = "footprint-map-amap-security-code";
 
 type LegacyFootprintMapSettings = Partial<FootprintMapSettings> & {
   amapKey?: unknown;
   amapSecurityJsCode?: unknown;
+  amapKeySecretId?: unknown;
+  amapSecurityJsCodeSecretId?: unknown;
 };
 
 export class FootprintMapPlugin extends Plugin {
@@ -39,7 +38,7 @@ export class FootprintMapPlugin extends Plugin {
           config,
           context.sourcePath,
           this.settings,
-          this.getAMapCredentials(),
+          this.getAMapWebServiceKey(),
           this.getI18n(),
         ));
       } catch (error) {
@@ -74,14 +73,10 @@ export class FootprintMapPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
-  getAMapCredentials(): AMapCredentials {
-    const key = this.settings.amapKeySecretId
-      ? this.app.secretStorage.getSecret(this.settings.amapKeySecretId)?.trim() ?? ""
+  getAMapWebServiceKey(): string {
+    return this.settings.amapWebServiceKeySecretId
+      ? this.app.secretStorage.getSecret(this.settings.amapWebServiceKeySecretId)?.trim() ?? ""
       : "";
-    const securityJsCode = this.settings.amapSecurityJsCodeSecretId
-      ? this.app.secretStorage.getSecret(this.settings.amapSecurityJsCodeSecretId)?.trim() ?? ""
-      : "";
-    return securityJsCode ? { key, securityJsCode } : { key };
   }
 
   getI18n(): I18n {
@@ -90,20 +85,20 @@ export class FootprintMapPlugin extends Plugin {
 
   private async loadSettings(): Promise<void> {
     const stored = (await this.loadData() ?? {}) as LegacyFootprintMapSettings;
-    const legacyKey = typeof stored.amapKey === "string" ? stored.amapKey.trim() : "";
-    const legacySecurityCode = typeof stored.amapSecurityJsCode === "string" ? stored.amapSecurityJsCode.trim() : "";
-    const migrated = Object.hasOwn(stored, "amapKey") || Object.hasOwn(stored, "amapSecurityJsCode");
-    const { amapKey: _legacyKey, amapSecurityJsCode: _legacySecurityCode, ...current } = stored;
+    const migrated = [
+      "amapKey",
+      "amapSecurityJsCode",
+      "amapKeySecretId",
+      "amapSecurityJsCodeSecretId",
+    ].some((field) => Object.hasOwn(stored, field));
+    const {
+      amapKey: _legacyKey,
+      amapSecurityJsCode: _legacySecurityCode,
+      amapKeySecretId: _legacyKeySecretId,
+      amapSecurityJsCodeSecretId: _legacySecurityCodeSecretId,
+      ...current
+    } = stored;
     this.settings = { ...DEFAULT_SETTINGS, ...current };
-
-    if (legacyKey && !this.settings.amapKeySecretId) {
-      this.app.secretStorage.setSecret(AMAP_KEY_SECRET_ID, legacyKey);
-      this.settings.amapKeySecretId = AMAP_KEY_SECRET_ID;
-    }
-    if (legacySecurityCode && !this.settings.amapSecurityJsCodeSecretId) {
-      this.app.secretStorage.setSecret(AMAP_SECURITY_CODE_SECRET_ID, legacySecurityCode);
-      this.settings.amapSecurityJsCodeSecretId = AMAP_SECURITY_CODE_SECRET_ID;
-    }
     if (migrated) await this.saveSettings();
   }
 

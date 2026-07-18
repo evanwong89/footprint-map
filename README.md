@@ -8,7 +8,7 @@ Footprint Map renders a local, time-ordered travel diary from photo locations in
 
 - Generate visits from embedded JPEG, HEIC, and PNG photo metadata.
 - Group consecutive photos within 200 metres of the first photo into one place.
-- Render with OpenStreetMap, AMap JS API 2.0, custom raster tiles, or no basemap.
+- Render with OpenStreetMap, an AMap static basemap, custom raster tiles, or no basemap.
 - Keep photo markers, the timeline, and order lines available when a basemap fails.
 - Browse every photo associated with the selected place.
 - Export a local SVG fallback for readers that cannot run the plugin.
@@ -74,12 +74,13 @@ OpenStreetMap is the default and works without an API key. The plugin displays t
 
 AMap is optional and intended mainly for users in mainland China.
 
-1. Create an AMap **Web (JS API)** key.
-2. In **Settings → Footprint Map**, select or create an Obsidian secret containing the Web key.
-3. For keys created on or after 2021-12-02, select or create a second secret containing the matching `securityJsCode`.
-4. Select **AMap JS API 2.0** as the default basemap and reload Obsidian.
+1. Create an AMap **Web Service** API key. A Web (JS API) key is a different credential type and will not work here.
+2. In **Settings → Footprint Map**, select or create an Obsidian secret containing that Web Service key.
+3. Select **AMap static map** as the default basemap.
 
-The plugin stores only SecretStorage identifiers in `data.json`. It never writes AMap credential values to Markdown, GeoJSON, SVG, or release files. Users are responsible for their own AMap account, credentials, quotas, domain restrictions, and provider terms.
+The plugin stores only a SecretStorage identifier in `data.json`. It never writes the AMap credential value to Markdown, GeoJSON, SVG, or release files. The old JavaScript API key and security code settings are removed during migration and are not silently reused as a Web Service key.
+
+AMap is requested as a static image after the initial view settles and after a drag or zoom ends. The request is debounced; Footprint Map does not prefetch or bulk-cache AMap images. Photo cards, selection, the timeline, dashed order lines, and arrows are rendered locally by Leaflet and remain interactive. Users are responsible for their own AMap account, key restrictions, quotas, and provider terms.
 
 ### Custom tiles
 
@@ -100,7 +101,7 @@ When you explicitly run a generation or export command, the plugin may create or
 Online basemaps necessarily contact third parties:
 
 - OpenStreetMap receives normal tile requests, including the requesting IP address and tile coordinates for the visible map area.
-- AMap receives script and map requests, the user-provided Web key, and information needed to display the visible map area.
+- AMap receives static-map requests containing the user-provided Web Service key, visible map centre, zoom level, requested image size, and the requesting IP address.
 - A custom tile provider receives requests for the tiles visible in the current viewport.
 
 Set `tiles: false` to use no-basemap mode and avoid these basemap requests. Refer to each provider's privacy policy and terms for its own processing practices.
@@ -113,7 +114,7 @@ GeoJSON, SVG, Markdown, and photo references remain ordinary files in your vault
 
 - **No visits generated:** verify that the embedded photos contain GPS and an explicit timezone offset.
 - **Basemap missing:** markers and the timeline should remain available. Check connectivity and the selected provider's configuration.
-- **AMap fails:** confirm that the key type is Web (JS API), the matching `securityJsCode` is selected, and any domain restrictions allow the Obsidian environment.
+- **AMap fails:** confirm that the selected secret contains a Web Service API key, the key is enabled for the static map service, and the account still has available quota. The plugin keeps markers, lines, photos, and the timeline available without a basemap.
 - **HEIC preview unavailable:** the visit remains valid even if the host cannot decode the image. Converting the displayed copy to PNG or JPEG may help.
 - **Wrong language:** choose Auto, English, or Simplified Chinese under **Settings → Footprint Map**, then reload the plugin.
 
@@ -158,7 +159,7 @@ Footprint Map 从 Obsidian 笔记引用的本地照片中读取 GPS 与带时区
 4. 插件会在笔记旁生成 GeoJSON，并在笔记中加入 `footprint-map` 代码块。
 5. 如需静态降级图，再执行“导出当前笔记的静态足迹图”。
 
-默认底图为 OpenStreetMap，无需 Key。中国大陆用户可以切换高德，并在 Obsidian 安全存储中分别选择或创建 Web Key 与配套 `securityJsCode`。高级用户也可以使用自定义瓦片，或设置 `tiles: false` 完全关闭在线底图。
+默认底图为 OpenStreetMap，无需 Key。中国大陆用户可以切换高德静态地图，并在 Obsidian 安全存储中选择或创建包含“Web 服务 API Key”的凭据；旧的 Web 端（JS API）Key 不能代替该 Key。高德请求只在视野稳定或拖动、缩放结束后防抖发起；点位、连线、照片和时间轴仍在本地渲染。高级用户也可以使用自定义瓦片，或设置 `tiles: false` 完全关闭在线底图。
 
 插件不包含遥测、广告或账户系统。照片与 EXIF 在本地读取；启用在线底图时，当前视野对应的瓦片请求会发送给所选地图服务商。禁用或卸载插件不会自动删除已生成的 GeoJSON、SVG 或 Markdown 内容。
 
