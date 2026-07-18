@@ -1,0 +1,10 @@
+{
+  "id": "footprint-map",
+  "name": "Footprint Map",
+  "version": "0.4.0",
+  "minAppVersion": "1.11.5",
+  "description": "Render local photo footprints as interactive time-ordered maps.",
+  "author": "Evan",
+  "authorUrl": "https://github.com/evanwong89",
+  "isDesktopOnly": false
+}

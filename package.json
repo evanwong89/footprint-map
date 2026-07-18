@@ -1,0 +1,40 @@
+{
+  "name": "footprint-map",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Portable Markdown footprint maps for Obsidian and browsers",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "footprint-map": "dist/cli/footprint-map.mjs"
+  },
+  "scripts": {
+    "dev": "node esbuild.config.mjs --watch",
+    "build": "node esbuild.config.mjs",
+    "preview": "node scripts/serve-preview.mjs",
+    "test:vault": "node dist/tools/build-test-vault.mjs",
+    "cli": "node dist/cli/footprint-map.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "verify:release": "node scripts/verify-release.mjs",
+    "package": "node scripts/package-release.mjs"
+  },
+  "dependencies": {
+    "exifr": "7.1.3",
+    "leaflet": "1.9.4",
+    "yaml": "2.9.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "1.9.21",
+    "@types/node": "24.10.1",
+    "esbuild": "0.28.1",
+    "obsidian": "1.13.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,197 @@
+import { Notice, Plugin, TFile, moment, normalizePath, type Editor, type MarkdownFileInfo } from "obsidian";
+import { extractEmbeddedPhotoLinks } from "../../application/extract-photo-links";
+import { generateFromPhotos, mergeGeneratedVisits } from "../../application/generate-from-photos";
+import { loadFootprint } from "../../application/load-footprint";
+import type { FootprintDocument, FootprintVisit } from "../../core/domain";
+import { serializeFootprintGeoJson } from "../../core/serialize-footprint";
+import { validateFootprintGeoJson } from "../../core/validate-footprint";
+import { ExifrPhotoMetadataReader } from "../../metadata/exifr-reader";
+import { renderStaticSvg } from "../../renderer/static-svg-renderer";
+import type { AMapCredentials } from "../../renderer/amap-loader";
+import { createI18n, type I18n } from "../../i18n";
+import { parseCodeBlockConfig } from "./code-block-config";
+import { FootprintRenderChild } from "./footprint-render-child";
+import { basename, dirname, resolveVaultPath } from "./vault-path";
+import { DEFAULT_SETTINGS, FootprintMapSettingTab, type FootprintMapSettings } from "./settings";
+
+const isSupportedPhoto = (file: TFile): boolean => ["jpg", "jpeg", "heic", "png"].includes(file.extension.toLowerCase());
+const AMAP_KEY_SECRET_ID = "footprint-map-amap-web-key";
+const AMAP_SECURITY_CODE_SECRET_ID = "footprint-map-amap-security-code";
+
+type LegacyFootprintMapSettings = Partial<FootprintMapSettings> & {
+  amapKey?: unknown;
+  amapSecurityJsCode?: unknown;
+};
+
+export class FootprintMapPlugin extends Plugin {
+  settings: FootprintMapSettings = { ...DEFAULT_SETTINGS };
+
+  async onload(): Promise<void> {
+    await this.loadSettings();
+    const i18n = this.getI18n();
+    this.addSettingTab(new FootprintMapSettingTab(this.app, this));
+    this.registerMarkdownCodeBlockProcessor("footprint-map", (source, element, context) => {
+      try {
+        const config = parseCodeBlockConfig(source);
+        context.addChild(new FootprintRenderChild(
+          element,
+          this.app.vault,
+          config,
+          context.sourcePath,
+          this.settings,
+          this.getAMapCredentials(),
+          this.getI18n(),
+        ));
+      } catch (error) {
+        element.createEl("pre", { text: this.getI18n().error(error) });
+      }
+    });
+
+    this.addCommand({
+      id: "generate-from-active-note-photos",
+      name: i18n.t("commandGenerate"),
+      editorCallback: (editor, view) => {
+        void this.generateForActiveNote(editor, view).catch((error: unknown) => {
+          console.error("Footprint Map generation failed", error);
+          new Notice(`Footprint Map: ${this.getI18n().error(error)}`, 10000);
+        });
+      },
+    });
+
+    this.addCommand({
+      id: "export-static-preview",
+      name: i18n.t("commandExport"),
+      editorCallback: (editor, view) => {
+        void this.exportStaticPreview(editor, view).catch((error: unknown) => {
+          console.error("Footprint Map static export failed", error);
+          new Notice(`Footprint Map: ${this.getI18n().error(error)}`, 10000);
+        });
+      },
+    });
+  }
+
+  async saveSettings(): Promise<void> {
+    await this.saveData(this.settings);
+  }
+
+  getAMapCredentials(): AMapCredentials {
+    const key = this.settings.amapKeySecretId
+      ? this.app.secretStorage.getSecret(this.settings.amapKeySecretId)?.trim() ?? ""
+      : "";
+    const securityJsCode = this.settings.amapSecurityJsCodeSecretId
+      ? this.app.secretStorage.getSecret(this.settings.amapSecurityJsCodeSecretId)?.trim() ?? ""
+      : "";
+    return securityJsCode ? { key, securityJsCode } : { key };
+  }
+
+  getI18n(): I18n {
+    return createI18n(this.settings.language, moment.locale());
+  }
+
+  private async loadSettings(): Promise<void> {
+    const stored = (await this.loadData() ?? {}) as LegacyFootprintMapSettings;
+    const legacyKey = typeof stored.amapKey === "string" ? stored.amapKey.trim() : "";
+    const legacySecurityCode = typeof stored.amapSecurityJsCode === "string" ? stored.amapSecurityJsCode.trim() : "";
+    const migrated = Object.hasOwn(stored, "amapKey") || Object.hasOwn(stored, "amapSecurityJsCode");
+    const { amapKey: _legacyKey, amapSecurityJsCode: _legacySecurityCode, ...current } = stored;
+    this.settings = { ...DEFAULT_SETTINGS, ...current };
+
+    if (legacyKey && !this.settings.amapKeySecretId) {
+      this.app.secretStorage.setSecret(AMAP_KEY_SECRET_ID, legacyKey);
+      this.settings.amapKeySecretId = AMAP_KEY_SECRET_ID;
+    }
+    if (legacySecurityCode && !this.settings.amapSecurityJsCodeSecretId) {
+      this.app.secretStorage.setSecret(AMAP_SECURITY_CODE_SECRET_ID, legacySecurityCode);
+      this.settings.amapSecurityJsCodeSecretId = AMAP_SECURITY_CODE_SECRET_ID;
+    }
+    if (migrated) await this.saveSettings();
+  }
+
+  private async generateForActiveNote(editor: Editor, view: MarkdownFileInfo): Promise<void> {
+    const note = view.file;
+    const i18n = this.getI18n();
+    if (!note) {
+      new Notice(`Footprint Map: ${i18n.t("noMarkdownFile")}`);
+      return;
+    }
+    const markdown = editor.getValue();
+    const linkTexts = extractEmbeddedPhotoLinks(markdown);
+    const files = linkTexts.flatMap((link): TFile[] => {
+      const file = this.app.metadataCache.getFirstLinkpathDest(link, note.path);
+      return file instanceof TFile && isSupportedPhoto(file) ? [file] : [];
+    });
+    const uniqueFiles = [...new Map(files.map((file) => [file.path, file])).values()];
+    if (!uniqueFiles.length) {
+      new Notice(`Footprint Map: ${i18n.t("noEmbeddedPhotos")}`);
+      return;
+    }
+
+    const inputs = await Promise.all(uniqueFiles.map(async (file) => ({
+      path: file.path,
+      bytes: await this.app.vault.readBinary(file),
+    })));
+    const generated = await generateFromPhotos(inputs, new ExifrPhotoMetadataReader());
+    const noteDirectory = dirname(note.path);
+    const outputPath = normalizePath(`${noteDirectory ? `${noteDirectory}/` : ""}${note.basename}.footprint.geojson`);
+    const existing = await this.readExistingVisits(outputPath);
+    if (!generated.visits.length && !existing.length) {
+      throw new Error(i18n.t("noGeneratedVisits"));
+    }
+    const now = new Date().toISOString();
+    const document: FootprintDocument = {
+      schemaVersion: "1.0",
+      title: i18n.t("generatedTitle", { name: note.basename }),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+      createdAt: now,
+      visits: mergeGeneratedVisits(existing, generated.visits),
+    };
+    const serialized = `${JSON.stringify(serializeFootprintGeoJson(document), null, 2)}\n`;
+    const current = this.app.vault.getAbstractFileByPath(outputPath);
+    if (current instanceof TFile) await this.app.vault.process(current, () => serialized);
+    else await this.app.vault.create(outputPath, serialized);
+
+    const source = basename(outputPath);
+    if (!markdown.includes("```footprint-map")) {
+      editor.replaceRange(
+        `\n\n\`\`\`footprint-map\nsource: ${source}\nheight: 420\ntitle: ${i18n.t("generatedTitle", { name: note.basename })}\n\`\`\`\n`,
+        { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length },
+      );
+    }
+    new Notice(
+      `Footprint Map: ${i18n.t("generatedSummary", { visits: generated.visits.length, issues: generated.issues.length })}`,
+      8000,
+    );
+  }
+
+  private async readExistingVisits(path: string): Promise<readonly FootprintVisit[]> {
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) return [];
+    try {
+      const validation = validateFootprintGeoJson(JSON.parse(await this.app.vault.cachedRead(file)));
+      if (!validation.document) throw new Error(validation.issues.map(({ message }) => message).join("；"));
+      return validation.document.visits;
+    } catch {
+      throw new Error(`FM_EXISTING_DATA_INVALID: ${path} 无法解析，为避免覆盖已停止生成。`);
+    }
+  }
+
+  private async exportStaticPreview(editor: Editor, view: MarkdownFileInfo): Promise<void> {
+    const i18n = this.getI18n();
+    const note = view.file;
+    if (!note) throw new Error(i18n.t("noMarkdownFile"));
+    const block = editor.getValue().match(/```footprint-map\s*\n([\s\S]*?)```/);
+    if (!block?.[1]) throw new Error(i18n.t("noFootprintBlock"));
+    const config = parseCodeBlockConfig(block[1]);
+    const sourcePath = resolveVaultPath(config.source, note.path);
+    const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
+    if (!(sourceFile instanceof TFile)) throw new Error(`FM_SOURCE_NOT_FOUND: 找不到 ${sourcePath}`);
+    const model = loadFootprint(await this.app.vault.cachedRead(sourceFile));
+    const svgPath = sourcePath.replace(/\.geojson$/i, ".svg");
+    if (svgPath === sourcePath) throw new Error(i18n.t("sourceMustBeGeoJson"));
+    const svg = `${renderStaticSvg(config.title ? { ...model, title: config.title } : model, 900, 520, i18n)}\n`;
+    const existing = this.app.vault.getAbstractFileByPath(svgPath);
+    if (existing instanceof TFile) await this.app.vault.process(existing, () => svg);
+    else await this.app.vault.create(svgPath, svg);
+    new Notice(`Footprint Map: ${i18n.t("staticPreviewWritten", { path: svgPath })}`);
+  }
+}

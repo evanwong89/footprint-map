@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://footprint-map.local/schema/footprint-map-v1.schema.json",
+  "title": "Footprint Map GeoJSON v1",
+  "type": "object",
+  "required": ["type", "footprintMap", "features"],
+  "properties": {
+    "type": { "const": "FeatureCollection" },
+    "footprintMap": {
+      "type": "object",
+      "required": ["schemaVersion", "timezone", "createdAt"],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "title": { "type": "string" },
+        "timezone": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    },
+    "features": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/feature" }
+    }
+  },
+  "$defs": {
+    "feature": {
+      "type": "object",
+      "required": ["type", "id", "geometry", "properties"],
+      "properties": {
+        "type": { "const": "Feature" },
+        "id": { "type": "string", "minLength": 1 },
+        "geometry": {
+          "type": "object",
+          "required": ["type", "coordinates"],
+          "properties": {
+            "type": { "enum": ["Point", "LineString"] },
+            "coordinates": { "type": "array" }
+          }
+        },
+        "properties": { "type": "object" }
+      }
+    }
+  }
+}

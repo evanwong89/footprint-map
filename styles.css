@@ -1,0 +1,185 @@
+@import "leaflet/dist/leaflet.css";
+
+.footprint-map-root {
+  --fm-accent: #e2673d;
+  --fm-ink: var(--text-normal, #292722);
+  --fm-muted: var(--text-muted, #6b675f);
+  --fm-panel: var(--background-primary, #fffdf8);
+  --fm-border: var(--background-modifier-border, #ded8cc);
+  color: var(--fm-ink);
+  font-family: var(--font-interface, ui-sans-serif, system-ui, sans-serif);
+}
+
+.footprint-map-header,
+.footprint-map-source-form {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.footprint-map-title,
+.footprint-map-header p { margin: 0; }
+.footprint-map-title { font-size: 1.15rem; }
+.footprint-map-legend { color: var(--fm-muted); font-size: .78rem; margin-top: 3px !important; }
+
+.footprint-map-fit,
+.footprint-map-source-form button {
+  background: var(--fm-panel);
+  border: 1px solid var(--fm-border);
+  border-radius: 999px;
+  color: var(--fm-ink);
+  cursor: pointer;
+  padding: 7px 13px;
+}
+
+.footprint-map-header-controls { align-items: center; display: flex; gap: 6px; }
+.footprint-map-header-controls .footprint-map-fit:first-child,
+.footprint-map-header-controls .footprint-map-fit:nth-child(2) { font-size: 20px; height: 38px; padding: 0; width: 38px; }
+.footprint-map-canvas {
+  background: #eeeae1;
+  border: 1px solid var(--fm-border);
+  border-radius: 14px;
+  min-height: 240px;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.footprint-map-marker-host { background: transparent; border: 0; }
+.footprint-map-place-card {
+  background: white;
+  box-shadow: 0 3px 12px #38231766;
+  box-sizing: content-box;
+  color: #292722;
+  cursor: pointer;
+  padding: 3px 3px 0;
+  position: relative;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+  width: 1.5cm;
+}
+.footprint-map-place-card:hover { transform: translateY(-2px); }
+.footprint-map-place-card.is-selected { box-shadow: 0 0 0 3px var(--fm-accent), 0 4px 14px #38231777; }
+.footprint-map-place-preview {
+  align-items: center;
+  background: var(--fm-accent);
+  color: white;
+  display: flex;
+  font-size: 16px;
+  font-weight: 800;
+  height: 1.5cm;
+  justify-content: center;
+  overflow: hidden;
+  width: 1.5cm;
+}
+.footprint-map-root .footprint-map-place-preview > img {
+  display: block !important;
+  height: 100% !important;
+  max-height: none !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  pointer-events: none;
+  width: 100% !important;
+}
+.footprint-map-place-fallback { font-size: 16px; font-weight: 800; }
+.footprint-map-place-sequence {
+  align-items: center;
+  background: rgb(255 255 255 / 10%);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 2px 6px #38231766;
+  color: black;
+  display: flex;
+  font-size: 10px;
+  font-weight: 600;
+  height: 18px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: -9px;
+  top: -9px;
+  width: 18px;
+  z-index: 1;
+}
+.footprint-map-place-caption {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.15;
+  min-height: 15px;
+  overflow: hidden;
+  padding: 5px 2px 6px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footprint-map-arrow { color: var(--fm-accent); font-size: 13px; text-shadow: 0 1px 2px white; }
+.footprint-map-arrow span { display: block; line-height: 14px; transform-origin: 50% 50%; }
+
+.footprint-map-photo-browser {
+  border-bottom: 1px solid var(--fm-border);
+  padding: 12px 2px 10px;
+}
+.footprint-map-photo-browser-heading { font-size: .82rem; font-weight: 750; margin-bottom: 8px; }
+.footprint-map-photo-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 0 0 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.footprint-map-browser-photo { flex: 0 0 auto; margin: 0; scroll-snap-align: start; }
+.footprint-map-browser-photo img {
+  border: 1px solid var(--fm-border);
+  border-radius: 8px;
+  display: block;
+  height: 4cm;
+  max-height: 4cm;
+  max-width: none;
+  object-fit: contain;
+  width: auto;
+}
+.footprint-map-browser-photo figcaption { color: var(--fm-muted); font-size: .72rem; margin-top: 3px; max-width: 6cm; }
+.footprint-map-photo-placeholder {
+  align-items: center;
+  background: #e9e4da;
+  border-radius: 8px;
+  color: #6b675f;
+  display: flex;
+  height: 4cm;
+  justify-content: center;
+  width: 5cm;
+}
+.footprint-map-photo-empty { color: var(--fm-muted); margin: 0; }
+
+.footprint-map-timeline { overflow-x: auto; padding: 14px 2px 4px; }
+.footprint-map-timeline ol { display: flex; gap: 24px; list-style-position: inside; margin: 0; min-width: max-content; padding: 0; }
+.footprint-map-timeline li::marker { color: var(--fm-accent); font-weight: 800; }
+.footprint-map-timeline li { border-radius: 6px; display: grid; gap: 2px; grid-template-columns: auto 1fr; padding: 3px 5px; }
+.footprint-map-time { color: var(--fm-muted); font-size: .78rem; grid-column: 1 / -1; }
+.footprint-map-visit-label { font-size: calc(1em - 2px); font-weight: 400; line-height: 1.25; }
+.footprint-map-timeline li.is-selected .footprint-map-time { color: var(--fm-ink); font-weight: 600; }
+.footprint-map-timeline li.is-selected .footprint-map-visit-label { font-size: 1em; font-weight: 700; }
+.footprint-map-issues,
+.footprint-map-error { background: #fff3d8; border: 1px solid #e0ba68; border-radius: 10px; margin-top: 12px; padding: 10px 14px; }
+.footprint-map-issues p { margin: 3px 0; }
+
+.footprint-map-standalone { background: #f3efe7; margin: 0; padding: 28px; }
+.footprint-map-standalone main { background: #fffdf8; border-radius: 18px; box-shadow: 0 16px 45px #48362520; margin: 0 auto; max-width: 1100px; padding: 20px; }
+.footprint-map-source-form { justify-content: flex-start; }
+.footprint-map-source-form input,
+.footprint-map-source-form select { border: 1px solid #d8d1c5; border-radius: 8px; min-width: 0; padding: 8px 10px; }
+.footprint-map-source-form input { flex: 1; }
+
+@media (max-width: 600px) {
+  .footprint-map-standalone { padding: 8px; }
+  .footprint-map-standalone main { border-radius: 12px; padding: 12px; }
+  .footprint-map-header { align-items: flex-start; flex-direction: column; }
+  .footprint-map-timeline ol { display: grid; gap: 10px; }
+  .footprint-map-source-form { align-items: stretch; flex-direction: column; }
+}

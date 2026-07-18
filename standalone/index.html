@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Footprint Map</title>
+    <link rel="stylesheet" href="./footprint-map.css">
+  </head>
+  <body class="footprint-map-standalone">
+    <main>
+      <form id="source-form" class="footprint-map-source-form">
+        <label for="source">GeoJSON URL</label>
+        <input id="source" name="source" type="text" autocomplete="off">
+        <label for="tile-provider">Basemap</label>
+        <select id="tile-provider" name="tileProvider">
+          <option value="osm">OpenStreetMap</option>
+          <option value="amap">AMap</option>
+        </select>
+        <button type="submit">Load</button>
+      </form>
+      <div id="footprint-map" aria-live="polite"></div>
+    </main>
+    <script src="./amap-config.js"></script>
+    <script type="module" src="./footprint-map.js"></script>
+  </body>
+</html>

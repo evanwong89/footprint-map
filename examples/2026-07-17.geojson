@@ -1,0 +1,56 @@
+{
+  "type": "FeatureCollection",
+  "footprintMap": {
+    "schemaVersion": "1.0",
+    "title": "2026-07-17 当日足迹",
+    "timezone": "Asia/Shanghai",
+    "createdAt": "2026-07-17T20:00:00+08:00"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "visit-breakfast",
+      "geometry": { "type": "Point", "coordinates": [121.4737, 31.2304] },
+      "properties": {
+        "kind": "visit",
+        "observedAt": "2026-07-17T09:20:00+08:00",
+        "timeConfidence": "manual",
+        "label": "早餐店",
+        "period": "morning",
+        "source": "manual",
+        "photos": [
+          { "path": "assets/footprint-map-concept-v1.jpg", "caption": "上午记录", "isPrimary": true }
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "visit-lunch",
+      "geometry": { "type": "Point", "coordinates": [121.4365, 31.2152] },
+      "properties": {
+        "kind": "visit",
+        "observedAt": "2026-07-17T12:35:00+08:00",
+        "timeConfidence": "manual",
+        "label": "午餐地点",
+        "period": "noon",
+        "source": "manual",
+        "photos": []
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "visit-gallery",
+      "geometry": { "type": "Point", "coordinates": [121.4998, 31.2421] },
+      "properties": {
+        "kind": "visit",
+        "observedAt": "2026-07-17T16:10:00+08:00",
+        "timeConfidence": "manual",
+        "label": "下午散步",
+        "note": "箭头只表示时间顺序。",
+        "period": "afternoon",
+        "source": "manual",
+        "photos": []
+      }
+    }
+  ]
+}

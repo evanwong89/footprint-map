@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run verify:release
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          release/footprint-map/main.js
+          release/footprint-map/manifest.json
+          release/footprint-map/styles.css
+          --title "Footprint Map $GITHUB_REF_NAME"
+          --generate-notes
