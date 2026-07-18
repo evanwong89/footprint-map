@@ -51,7 +51,7 @@ export class FootprintMapSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             const nextI18n = this.plugin.getI18n();
             new Notice(`Footprint Map: ${nextI18n.t("languageChanged")}`, 8000);
-            this.update();
+            this.renderSettings();
           })); },
       },
       {
@@ -117,6 +117,10 @@ export class FootprintMapSettingTab extends PluginSettingTab {
 
   /** Compatibility fallback for Obsidian versions before the declarative settings API. */
   display(): void {
+    this.renderSettings();
+  }
+
+  private renderSettings(): void {
     this.containerEl.empty();
     for (const definition of this.getSettingDefinitions() as SettingDefinitionRender[]) {
       const setting = new Setting(this.containerEl).setName(definition.name);

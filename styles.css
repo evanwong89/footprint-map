@@ -10,6 +10,11 @@
   font-family: var(--font-interface, system-ui, sans-serif);
 }
 
+.leaflet-pane.footprint-map-amap-static-pane {
+  pointer-events: none;
+  z-index: 200;
+}
+
 .footprint-map-header,
 .footprint-map-source-form {
   align-items: center;
