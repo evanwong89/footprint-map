@@ -4,6 +4,19 @@ Footprint Map renders a local, time-ordered travel diary from photo locations in
 
 中文说明见 [简体中文](#简体中文)。
 
+## Quick start
+
+1. Install and enable the Footprint Map plugin.
+2. Open the Obsidian note where you want to generate a Footprint Map.
+3. Press `Command + P` to open the Command Palette, search for `Footprint`, and select **Footprint Map: Generate footprint from photos in the current note**. A footprint map will be generated in the original note, as shown in the preview.
+
+### Notes
+
+The following images may not appear in the Footprint Map:
+
+1. Images downloaded from the internet.
+2. Photos taken without location information enabled.
+
 ![Footprint Map showing time-ordered photo places, the selected place gallery, and the synchronized timeline.](assets/footprint-map-daily-footprint.png)
 
 *Visualize a day's photo journey on an interactive map, with time-ordered places, photo galleries, and a synchronized timeline.*
@@ -45,15 +58,6 @@ After the plugin is accepted into the Obsidian community directory:
 4. Reload Obsidian and enable **Footprint Map** under **Community plugins**.
 
 Do not copy another person's `data.json`; it contains vault-specific preferences and secret references.
-
-## Quick start
-
-1. Open a Markdown note that embeds local JPEG, HEIC, or PNG photos.
-2. Run **Generate footprint from photos in the current note** from the command palette.
-3. Review the generated `.footprint.geojson` file and the `footprint-map` code block appended to the note.
-4. Run **Export a static footprint preview** if you also want an SVG fallback.
-
-Only valid photo metadata is imported. Missing GPS, missing timezone information, and damaged files are reported rather than guessed.
 
 ## Markdown format
 
@@ -159,11 +163,16 @@ Footprint Map 从 Obsidian 笔记引用的本地照片中读取 GPS 与带时区
 
 ### 快速使用
 
-1. 安装并启用插件。
-2. 打开引用了本地 JPEG、HEIC 或 PNG 照片的笔记。
-3. 在命令面板执行“从当前笔记的照片生成足迹”。
-4. 插件会在笔记旁生成 GeoJSON，并在笔记中加入 `footprint-map` 代码块。
-5. 如需静态降级图，再执行“导出当前笔记的静态足迹图”。
+1. 安装并启用 Footprint Map 插件。
+2. 打开 Obsidian 中想要生成 Footprint Map 的笔记。
+3. 按 `Command + P` 打开命令面板，搜索 `Footprint`，选择 **Footprint Map：从当前笔记的照片生成足迹**，原笔记中即可生成足迹（效果如预览图）。
+
+### 注意事项
+
+以下情况可能会导致图片无法展示在 Footprint Map 的结果中：
+
+1. 网络下载的图片。
+2. 拍摄时未启用位置信息的照片。
 
 默认底图为 OpenStreetMap，无需 Key。中国大陆用户可以切换高德静态地图，并在 Obsidian 安全存储中选择或创建包含“Web 服务 API Key”的凭据；旧的 Web 端（JS API）Key 不能代替该 Key。高德请求只在视野稳定或拖动、缩放结束后防抖发起；点位、连线、照片和时间轴仍在本地渲染。高级用户也可以使用自定义瓦片，或设置 `tiles: false` 完全关闭在线底图。
 

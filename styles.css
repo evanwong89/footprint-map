@@ -27,7 +27,9 @@
 .footprint-map-title,
 .footprint-map-header p { margin: 0; }
 .footprint-map-title { font-size: 1.15rem; }
-.footprint-map-header .footprint-map-legend { color: var(--fm-muted); font-size: .78rem; margin-top: 3px; }
+.footprint-map-header .footprint-map-legend,
+.footprint-map-header .footprint-map-zoom-hint { color: var(--fm-muted); font-size: .78rem; margin-top: 3px; }
+.footprint-map-header .footprint-map-zoom-hint { font-size: .72rem; }
 
 .footprint-map-fit,
 .footprint-map-source-form button {

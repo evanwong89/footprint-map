@@ -10,11 +10,13 @@ describe("internationalization", () => {
   it("follows a Chinese Obsidian locale in automatic mode", () => {
     expect(resolveLocale("auto", "zh-cn")).toBe("zh-CN");
     expect(createI18n("auto", "zh-cn").t("fitAll")).toBe("适配全部点位");
+    expect(createI18n("auto", "zh-cn").t("zoomHint")).toContain("⌘/Ctrl");
   });
 
   it("allows an explicit language to override the host locale", () => {
     const i18n = createI18n("en", "zh-cn");
     expect(i18n.t("fitAll")).toBe("Fit all places");
+    expect(i18n.t("zoomHint")).toContain("Pinch");
     expect(i18n.period("afternoon")).toBe("Afternoon");
   });
 

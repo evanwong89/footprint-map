@@ -12,6 +12,8 @@ import type { I18n } from "../i18n";
 import { element } from "./dom";
 import type { MapController } from "./controller";
 import { createAMapStaticMapImage } from "./amap-static-map";
+import { createLeafletMapOptions } from "./map-options";
+import { gateWheelZoom } from "./wheel-zoom-gate";
 
 export type CoordinateTransform = (
   longitude: number,
@@ -167,6 +169,7 @@ export class FootprintMapController implements MapController {
   private readonly arrowMarkers: Array<{ marker: Marker; segment: DisplaySegment }> = [];
   private readonly updateArrows: () => void;
   private readonly cleanupInitialFit: () => void;
+  private readonly cleanupWheelZoomGate: () => void;
   private cleanupStaticMap: () => void = () => undefined;
   private tileLayer: TileLayer | undefined;
   private staticImageLayer: ImageOverlay | undefined;
@@ -184,6 +187,7 @@ export class FootprintMapController implements MapController {
     heading.append(
       element("h3", "footprint-map-title", model.title),
       element("p", "footprint-map-legend", i18n.t("legend")),
+      element("p", "footprint-map-zoom-hint", i18n.t("zoomHint")),
     );
     const fitButton = element("button", "footprint-map-fit", i18n.t("fitAll"));
     fitButton.type = "button";
@@ -196,14 +200,9 @@ export class FootprintMapController implements MapController {
     this.issuesRegion = this.createIssues(model);
     container.append(this.root);
 
-    this.map = L.map(mapElement, {
-      zoomControl: true,
-      attributionControl: true,
-      scrollWheelZoom: false,
-      zoomSnap: options.amapStaticMap ? 1 : 0.25,
-      minZoom: options.amapStaticMap ? 2 : undefined,
-      maxZoom: options.amapStaticMap ? 18 : undefined,
-    });
+    mapElement.addEventListener("wheel", gateWheelZoom, { capture: true, passive: true });
+    this.cleanupWheelZoomGate = () => mapElement.removeEventListener("wheel", gateWheelZoom, true);
+    this.map = L.map(mapElement, createLeafletMapOptions(Boolean(options.amapStaticMap)));
     if (options.tileProvider) {
       this.tileLayer = L.tileLayer(options.tileProvider.urlTemplate, {
         attribution: options.tileProvider.attribution,
@@ -408,6 +407,7 @@ export class FootprintMapController implements MapController {
 
   destroy(): void {
     this.cleanupInitialFit();
+    this.cleanupWheelZoomGate();
     this.cleanupStaticMap();
     this.tileLayer?.off("tileerror", this.handleTileError);
     this.map.off("zoomend moveend", this.updateArrows);
