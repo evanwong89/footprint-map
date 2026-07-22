@@ -1,12 +1,10 @@
 import { Notice, Plugin, TFile, moment, normalizePath, type Editor, type MarkdownFileInfo } from "obsidian";
 import { extractEmbeddedPhotoLinks } from "../../application/extract-photo-links";
 import { generateFromPhotos, mergeGeneratedVisits } from "../../application/generate-from-photos";
-import { loadFootprint } from "../../application/load-footprint";
 import type { FootprintDocument, FootprintVisit } from "../../core/domain";
 import { serializeFootprintGeoJson } from "../../core/serialize-footprint";
 import { validateFootprintGeoJson } from "../../core/validate-footprint";
 import { ExifrPhotoMetadataReader } from "../../metadata/exifr-reader";
-import { renderStaticSvg } from "../../renderer/static-svg-renderer";
 import { createI18n, type I18n } from "../../i18n";
 import { parseCodeBlockConfig } from "./code-block-config";
 import { FootprintRenderChild } from "./footprint-render-child";
@@ -57,16 +55,6 @@ export class FootprintMapPlugin extends Plugin {
       },
     });
 
-    this.addCommand({
-      id: "export-static-preview",
-      name: i18n.t("commandExport"),
-      editorCallback: (editor, view) => {
-        void this.exportStaticPreview(editor, view).catch((error: unknown) => {
-          console.error("Footprint Map static export failed", error);
-          new Notice(`Footprint Map: ${this.getI18n().error(error)}`, 10000);
-        });
-      },
-    });
   }
 
   async saveSettings(): Promise<void> {
@@ -170,23 +158,4 @@ export class FootprintMapPlugin extends Plugin {
     }
   }
 
-  private async exportStaticPreview(editor: Editor, view: MarkdownFileInfo): Promise<void> {
-    const i18n = this.getI18n();
-    const note = view.file;
-    if (!note) throw new Error(i18n.t("noMarkdownFile"));
-    const block = editor.getValue().match(/```footprint-map\s*\n([\s\S]*?)```/);
-    if (!block?.[1]) throw new Error(i18n.t("noFootprintBlock"));
-    const config = parseCodeBlockConfig(block[1]);
-    const sourcePath = resolveVaultPath(config.source, note.path);
-    const sourceFile = this.app.vault.getAbstractFileByPath(sourcePath);
-    if (!(sourceFile instanceof TFile)) throw new Error(`FM_SOURCE_NOT_FOUND: 找不到 ${sourcePath}`);
-    const model = loadFootprint(await this.app.vault.cachedRead(sourceFile));
-    const svgPath = sourcePath.replace(/\.geojson$/i, ".svg");
-    if (svgPath === sourcePath) throw new Error(i18n.t("sourceMustBeGeoJson"));
-    const svg = `${renderStaticSvg(config.title ? { ...model, title: config.title } : model, 900, 520, i18n)}\n`;
-    const existing = this.app.vault.getAbstractFileByPath(svgPath);
-    if (existing instanceof TFile) await this.app.vault.process(existing, () => svg);
-    else await this.app.vault.create(svgPath, svg);
-    new Notice(`Footprint Map: ${i18n.t("staticPreviewWritten", { path: svgPath })}`);
-  }
 }

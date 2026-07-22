@@ -2,12 +2,10 @@ import { copyFile, cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { extractEmbeddedPhotoLinks } from "../application/extract-photo-links";
 import { generateFromPhotos } from "../application/generate-from-photos";
-import { buildViewModel } from "../core/build-view-model";
 import type { FootprintDocument } from "../core/domain";
 import { serializeFootprintGeoJson } from "../core/serialize-footprint";
 import { validateFootprintGeoJson } from "../core/validate-footprint";
 import { ExifrPhotoMetadataReader } from "../metadata/exifr-reader";
-import { renderStaticSvg } from "../renderer/static-svg-renderer";
 
 interface ToolOptions {
   input: string;
@@ -78,16 +76,14 @@ const main = async (): Promise<void> => {
     visits: generated.visits,
   };
   const geoJsonName = `${noteStem}-test.footprint.geojson`;
-  const svgName = `${noteStem}-test.footprint.svg`;
   const serialized = serializeFootprintGeoJson(document);
   const validation = validateFootprintGeoJson(serialized);
   if (!validation.document) {
     throw new Error(`生成的 GeoJSON 未通过校验：${validation.issues.map(({ message }) => message).join("；")}`);
   }
   await writeFile(join(options.output, geoJsonName), `${JSON.stringify(serialized, null, 2)}\n`, "utf8");
-  await writeFile(join(options.output, svgName), `${renderStaticSvg(buildViewModel(document))}\n`, "utf8");
 
-  const testBlock = `\n\n## Footprint Map 测试\n\n\`\`\`footprint-map\nsource: ${geoJsonName}\nheight: 520\nfallback: ${svgName}\ntitle: ${noteStem} 真实日志测试足迹\ntiles: true\ntileProvider: amap\n\`\`\`\n`;
+  const testBlock = `\n\n## Footprint Map 测试\n\n\`\`\`footprint-map\nsource: ${geoJsonName}\nheight: 520\ntitle: ${noteStem} 真实日志测试足迹\ntiles: true\ntileProvider: amap\n\`\`\`\n`;
   await writeFile(join(options.output, `${noteStem}-test.md`), `${markdown.trimEnd()}${testBlock}`, "utf8");
 
   if (options.plugin) {
@@ -101,7 +97,6 @@ const main = async (): Promise<void> => {
     testVault: options.output,
     testNote: join(options.output, `${noteStem}-test.md`),
     geoJson: join(options.output, geoJsonName),
-    staticPreview: join(options.output, svgName),
     referencedImages: links.length,
     copiedImages: copied.length,
     generatedVisits: generated.visits.length,

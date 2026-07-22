@@ -30,7 +30,6 @@ The following images may not appear in the Footprint Map:
 - Render with OpenStreetMap, an AMap static basemap, custom raster tiles, or no basemap.
 - Keep photo markers, the timeline, and order lines available when a basemap fails.
 - Browse every photo associated with the selected place.
-- Export a local SVG fallback for readers that cannot run the plugin.
 - Store footprint data in GeoJSON next to the note instead of a proprietary database.
 - English and Simplified Chinese interface.
 
@@ -65,7 +64,6 @@ Do not copy another person's `data.json`; it contains vault-specific preferences
 ```footprint-map
 source: 2026-07-17.footprint.geojson
 height: 520
-fallback: 2026-07-17.footprint.svg
 title: Daily footprint
 tiles: true
 tileProvider: osm
@@ -88,7 +86,7 @@ AMap is optional and intended mainly for users in mainland China.
 2. In **Settings → Footprint Map**, select or create an Obsidian secret containing that Web Service key.
 3. Select **AMap static map** as the default basemap.
 
-The plugin stores only a SecretStorage identifier in `data.json`. It never writes the AMap credential value to Markdown, GeoJSON, SVG, or release files. The old JavaScript API key and security code settings are removed during migration and are not silently reused as a Web Service key.
+The plugin stores only a SecretStorage identifier in `data.json`. It never writes the AMap credential value to Markdown, GeoJSON, or release files. The old JavaScript API key and security code settings are removed during migration and are not silently reused as a Web Service key.
 
 AMap is requested as a static image after the initial view settles and after a drag or zoom ends. The request is debounced; Footprint Map does not prefetch or bulk-cache AMap images. Photo cards, selection, the timeline, dashed order lines, and arrows are rendered locally by Leaflet and remain interactive. Users are responsible for their own AMap account, key restrictions, quotas, and provider terms.
 
@@ -102,10 +100,9 @@ Footprint Map has no account, analytics, advertising, or telemetry.
 
 When generating a footprint, the plugin locally reads only the images explicitly embedded in the active note. It extracts GPS and capture time metadata in the Obsidian client. Photo files and EXIF metadata are not uploaded by Footprint Map.
 
-When you explicitly run a generation or export command, the plugin may create or update:
+When you run the generation command, the plugin may create or update:
 
 - `<note-name>.footprint.geojson` next to the note;
-- `<note-name>.footprint.svg` next to the GeoJSON;
 - one `footprint-map` code block in the active note.
 
 Online basemaps necessarily contact third parties:
@@ -118,7 +115,7 @@ Set `tiles: false` to use no-basemap mode and avoid these basemap requests. Refe
 
 ## Data ownership and backups
 
-GeoJSON, SVG, Markdown, and photo references remain ordinary files in your vault. Back them up as you would any other notes. Disabling or uninstalling the plugin does not delete generated files. Before running generation on important notes, keep a current backup or use version control.
+GeoJSON, Markdown, and photo references remain ordinary files in your vault. Back them up as you would any other notes. Disabling or uninstalling the plugin does not delete generated files. Before running generation on important notes, keep a current backup or use version control.
 
 ## Troubleshooting
 
@@ -176,6 +173,6 @@ Footprint Map 从 Obsidian 笔记引用的本地照片中读取 GPS 与带时区
 
 默认底图为 OpenStreetMap，无需 Key。中国大陆用户可以切换高德静态地图，并在 Obsidian 安全存储中选择或创建包含“Web 服务 API Key”的凭据；旧的 Web 端（JS API）Key 不能代替该 Key。高德请求只在视野稳定或拖动、缩放结束后防抖发起；点位、连线、照片和时间轴仍在本地渲染。高级用户也可以使用自定义瓦片，或设置 `tiles: false` 完全关闭在线底图。
 
-插件不包含遥测、广告或账户系统。照片与 EXIF 在本地读取；启用在线底图时，当前视野对应的瓦片请求会发送给所选地图服务商。禁用或卸载插件不会自动删除已生成的 GeoJSON、SVG 或 Markdown 内容。
+插件不包含遥测、广告或账户系统。照片与 EXIF 在本地读取；启用在线底图时，当前视野对应的瓦片请求会发送给所选地图服务商。禁用或卸载插件不会自动删除已生成的 GeoJSON 或 Markdown 内容。
 
 项目使用 [MIT License](LICENSE) 开源；第三方组件许可声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

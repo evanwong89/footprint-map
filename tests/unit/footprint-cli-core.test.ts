@@ -18,11 +18,11 @@ afterEach(async () => {
 describe("Footprint Map CLI core", () => {
   it("parses a safe preview by default and an explicit apply mode", () => {
     const preview = parseCliArguments(["generate", "--input", "log.md", "--vault", "."]);
-    expect(preview).toMatchObject({ command: "generate", apply: false, height: 520, tileProvider: "amap", staticPreview: true });
+    expect(preview).toMatchObject({ command: "generate", apply: false, height: 520, tileProvider: "amap" });
     const apply = parseCliArguments([
-      "generate", "--input", "log.md", "--vault", ".", "--apply", "--no-static", "--height", "640", "--tile-provider", "osm",
+      "generate", "--input", "log.md", "--vault", ".", "--apply", "--height", "640", "--tile-provider", "osm",
     ]);
-    expect(apply).toMatchObject({ command: "generate", apply: true, height: 640, tileProvider: "osm", staticPreview: false });
+    expect(apply).toMatchObject({ command: "generate", apply: true, height: 640, tileProvider: "osm" });
   });
 
   it("rejects invalid heights and providers", () => {
@@ -34,7 +34,6 @@ describe("Footprint Map CLI core", () => {
     const block = createFootprintBlock({
       source: "2026-07-16.footprint.geojson",
       height: 520,
-      fallback: "2026-07-16.footprint.svg",
       title: "2026-07-16 当日足迹",
       tileProvider: "amap",
     });

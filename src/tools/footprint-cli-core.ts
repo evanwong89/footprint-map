@@ -12,7 +12,6 @@ export interface GenerateCliOptions {
   timezone: string;
   title?: string;
   apply: boolean;
-  staticPreview: boolean;
 }
 
 export const CLI_USAGE = `用法：
@@ -23,8 +22,7 @@ export const CLI_USAGE = `用法：
   --tile-provider <amap|osm>  地图提供者，默认 amap
   --timezone <IANA时区>       默认使用当前系统时区
   --title <标题>              默认“<日志文件名> 当日足迹”
-  --no-static                 不生成同名 .footprint.svg
-  --apply                     写入 GeoJSON、SVG 和 Markdown；不填写时只预览
+  --apply                     写入 GeoJSON 和 Markdown；不填写时只预览
   --help                      显示帮助`;
 
 const requireValue = (arguments_: readonly string[], index: number, option: string): string => {
@@ -38,15 +36,10 @@ export const parseCliArguments = (arguments_: readonly string[]): GenerateCliOpt
   if (arguments_[0] !== "generate") throw new Error(`未知命令：${arguments_[0]}。\n${CLI_USAGE}`);
   const values = new Map<string, string>();
   let apply = false;
-  let staticPreview = true;
   for (let index = 1; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     if (argument === "--apply") {
       apply = true;
-      continue;
-    }
-    if (argument === "--no-static") {
-      staticPreview = false;
       continue;
     }
     if (!argument?.startsWith("--")) throw new Error(`无效参数：${argument ?? "<empty>"}。\n${CLI_USAGE}`);
@@ -73,7 +66,6 @@ export const parseCliArguments = (arguments_: readonly string[]): GenerateCliOpt
     tileProvider,
     timezone,
     apply,
-    staticPreview,
   };
   const title = values.get("title")?.trim();
   if (title) options.title = title;

@@ -2,12 +2,10 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import { extractEmbeddedPhotoLinks } from "../application/extract-photo-links";
 import { generateFromPhotos, mergeGeneratedVisits } from "../application/generate-from-photos";
-import { buildViewModel } from "../core/build-view-model";
 import type { FootprintDocument, FootprintIssue, FootprintVisit } from "../core/domain";
 import { serializeFootprintGeoJson } from "../core/serialize-footprint";
 import { validateFootprintGeoJson } from "../core/validate-footprint";
 import { ExifrPhotoMetadataReader } from "../metadata/exifr-reader";
-import { renderStaticSvg } from "../renderer/static-svg-renderer";
 import {
   assertPathInsideVault,
   CLI_USAGE,
@@ -67,9 +65,7 @@ const main = async (): Promise<void> => {
   const noteStem = basename(options.input, ".md");
   const directory = dirname(options.input);
   const geoJsonName = `${noteStem}.footprint.geojson`;
-  const svgName = `${noteStem}.footprint.svg`;
   const geoJsonPath = join(directory, geoJsonName);
-  const svgPath = join(directory, svgName);
   const existing = await readExistingVisits(geoJsonPath);
   const visits = mergeGeneratedVisits(existing, generated.visits);
   if (!visits.length) throw new Error("没有照片同时包含有效 GPS 和明确时区，且不存在可保留的手动点位，未生成空足迹。");
@@ -84,11 +80,9 @@ const main = async (): Promise<void> => {
   const serialized = serializeFootprintGeoJson(document);
   const validation = validateFootprintGeoJson(serialized);
   if (!validation.document) throw new Error(`生成的 GeoJSON 未通过校验：${validation.issues.map(({ message }) => message).join("；")}`);
-  const fallback = options.staticPreview ? svgName : undefined;
   const block = createFootprintBlock({
     source: geoJsonName,
     height: options.height,
-    ...(fallback ? { fallback } : {}),
     title,
     tileProvider: options.tileProvider,
   });
@@ -96,7 +90,6 @@ const main = async (): Promise<void> => {
 
   if (options.apply) {
     await atomicWrite(geoJsonPath, `${JSON.stringify(serialized, null, 2)}\n`);
-    if (options.staticPreview) await atomicWrite(svgPath, `${renderStaticSvg(buildViewModel(document))}\n`);
     await atomicWrite(options.input, updatedMarkdown);
   }
 
@@ -105,7 +98,6 @@ const main = async (): Promise<void> => {
     mode: options.apply ? "apply" : "preview",
     markdown: options.input,
     geoJson: geoJsonPath,
-    staticPreview: options.staticPreview ? svgPath : null,
     referencedImages: links.length,
     readableImages: photoInputs.length,
     generatedVisits: generated.visits.length,
