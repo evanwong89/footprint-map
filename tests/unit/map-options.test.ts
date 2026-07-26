@@ -9,10 +9,10 @@ describe("Leaflet map options", () => {
     expect(options.touchZoom).toBe(true);
   });
 
-  it("keeps static AMap zoom levels on whole-number steps", () => {
+  it("allows quarter-step AMap views while keeping the static service in range", () => {
     const options = createLeafletMapOptions(true);
 
-    expect(options.zoomSnap).toBe(1);
+    expect(options.zoomSnap).toBe(0.25);
     expect(options.minZoom).toBe(2);
     expect(options.maxZoom).toBe(18);
   });

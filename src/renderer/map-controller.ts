@@ -14,6 +14,8 @@ import type { MapController } from "./controller";
 import { createAMapStaticMapImage } from "./amap-static-map";
 import { createLeafletMapOptions } from "./map-options";
 import { gateWheelZoom } from "./wheel-zoom-gate";
+import { createPhotoLightbox } from "./photo-lightbox";
+import { calculateTightMapFit } from "./tight-map-fit";
 
 export type CoordinateTransform = (
   longitude: number,
@@ -79,6 +81,7 @@ export const createVisitMarkerContent = (
 interface VisitPhotoBrowser {
   element: HTMLElement;
   selectVisit(visit: VisitViewModel): void;
+  destroy(): void;
 }
 
 export const createVisitPhotoBrowser = (
@@ -90,6 +93,7 @@ export const createVisitPhotoBrowser = (
   region.setAttribute("aria-live", "polite");
   const heading = element("div", "footprint-map-photo-browser-heading");
   const strip = element("div", "footprint-map-photo-strip");
+  const lightbox = createPhotoLightbox(i18n);
   region.append(heading, strip);
   return {
     element: region,
@@ -102,6 +106,10 @@ export const createVisitPhotoBrowser = (
       }
       for (const photo of visit.photos) {
         const frame = element("figure", "footprint-map-browser-photo");
+        frame.tabIndex = 0;
+        frame.setAttribute("role", "button");
+        frame.setAttribute("aria-label", i18n.t("openPhotoPreview"));
+        frame.title = i18n.t("openPhotoPreview");
         const image = element("img");
         image.loading = "lazy";
         image.alt = photo.caption ?? i18n.t("photoAlt", { sequence: visit.sequence });
@@ -109,11 +117,29 @@ export const createVisitPhotoBrowser = (
         image.addEventListener("error", () => {
           image.replaceWith(element("div", "footprint-map-photo-placeholder", i18n.t("photoUnavailable")));
         }, { once: true });
+        const openPreview = (): void => {
+          if (!image.isConnected) return;
+          frame.focus({ preventScroll: true });
+          lightbox.open({
+            src: image.src,
+            alt: image.alt,
+            ...(photo.caption ? { caption: photo.caption } : {}),
+          });
+        };
+        frame.addEventListener("click", openPreview);
+        frame.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          openPreview();
+        });
         frame.append(image);
         if (photo.caption) frame.append(element("figcaption", undefined, photo.caption));
         strip.append(frame);
       }
       strip.scrollLeft = 0;
+    },
+    destroy(): void {
+      lightbox.destroy();
     },
   };
 };
@@ -171,6 +197,7 @@ export class FootprintMapController implements MapController {
   private readonly cleanupInitialFit: () => void;
   private readonly cleanupWheelZoomGate: () => void;
   private cleanupStaticMap: () => void = () => undefined;
+  private cleanupPhotoBrowser: () => void = () => undefined;
   private tileLayer: TileLayer | undefined;
   private staticImageLayer: ImageOverlay | undefined;
   private tileErrorCount = 0;
@@ -196,6 +223,7 @@ export class FootprintMapController implements MapController {
     const mapElement = element("div", "footprint-map-canvas");
     mapElement.style.height = `${Math.min(960, Math.max(240, options.height ?? 420))}px`;
     const photoBrowser = createVisitPhotoBrowser(options.resourceResolver, options.resourceBasePath, i18n);
+    this.cleanupPhotoBrowser = () => photoBrowser.destroy();
     this.root.append(header, mapElement, photoBrowser.element);
     this.issuesRegion = this.createIssues(model);
     container.append(this.root);
@@ -268,12 +296,46 @@ export class FootprintMapController implements MapController {
     }
 
     const fit = (): void => {
-      if (model.visits.length === 1) this.map.setView(positions.get(model.visits[0]!.id)!, 14);
-      else this.map.fitBounds(bounds, {
-        paddingTopLeft: [48, 104],
-        paddingBottomRight: [48, 24],
-        maxZoom: 16,
-      });
+      if (options.amapStaticMap) {
+        const tightFit = calculateTightMapFit({
+          points: [...positions.values()],
+          viewport: {
+            width: mapElement.clientWidth,
+            height: mapElement.clientHeight,
+          },
+          minimumZoom: 2,
+          maximumZoom: 16,
+          zoomStep: 0.25,
+          markerInsets: {
+            left: 34,
+            right: 43,
+            top: 96,
+            bottom: 4,
+          },
+          project: (position, zoom) => this.map.project(position, zoom),
+        });
+        if (tightFit) {
+          this.map.setView(
+            this.map.unproject(L.point(tightFit.center.x, tightFit.center.y), tightFit.zoom),
+            tightFit.zoom,
+            { animate: false },
+          );
+        } else {
+          this.map.fitBounds(bounds, {
+            paddingTopLeft: [40, 100],
+            paddingBottomRight: [44, 8],
+            maxZoom: 16,
+          });
+        }
+      } else if (model.visits.length === 1) {
+        this.map.setView(positions.get(model.visits[0]!.id)!, 14);
+      } else {
+        this.map.fitBounds(bounds, {
+          paddingTopLeft: [48, 104],
+          paddingBottomRight: [48, 24],
+          maxZoom: 16,
+        });
+      }
     };
     this.updateArrows = () => {
       for (const { marker, segment } of this.arrowMarkers) {
@@ -342,7 +404,24 @@ export class FootprintMapController implements MapController {
         viewportHeight: mapElement.clientHeight,
       });
       const sequence = ++requestSequence;
-      const nextLayer = L.imageOverlay(image.url, this.map.getBounds(), {
+      const imageCenter = this.map.project(center, image.leafletImageZoom);
+      const imageBounds = L.latLngBounds(
+        this.map.unproject(
+          L.point(
+            imageCenter.x - image.requestWidth,
+            imageCenter.y - image.requestHeight,
+          ),
+          image.leafletImageZoom,
+        ),
+        this.map.unproject(
+          L.point(
+            imageCenter.x + image.requestWidth,
+            imageCenter.y + image.requestHeight,
+          ),
+          image.leafletImageZoom,
+        ),
+      );
+      const nextLayer = L.imageOverlay(image.url, imageBounds, {
         pane: paneName,
         interactive: false,
       });
@@ -411,6 +490,7 @@ export class FootprintMapController implements MapController {
     this.cleanupStaticMap();
     this.tileLayer?.off("tileerror", this.handleTileError);
     this.map.off("zoomend moveend", this.updateArrows);
+    this.cleanupPhotoBrowser();
     this.map.remove();
     this.root.remove();
   }

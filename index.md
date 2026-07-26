@@ -4,9 +4,9 @@
 
 ## 项目状态
 
-- 状态：MVP 已实现并通过类型检查、自动化测试、生产构建与本地 Browser 页面滚动验证；待 Obsidian Desktop/Mobile、物理触控板捏合手感和真实照片样本验收。
+- 状态：MVP 与 v0.28 已实现，并通过类型检查、47 项自动化测试、生产构建及本地浏览器滚轮缩放、拖动和关闭复位验证；待 Obsidian Mobile 物理触屏捏合与真实高德 Key 验收。
 - 关联需求：[[../../Requirements/REQ-004-可移植Markdown互动足迹地图|REQ-004：可移植 Markdown 互动足迹地图]]
-- 当前范围：Obsidian 日记内嵌互动地图、Leaflet/OpenStreetMap 与高德静态地图底图、照片缩略图点位与地图外横向照片浏览、200 米连续照片聚合、Vault 内 JPEG/HEIC/PNG 的 TypeScript EXIF 解析、GeoJSON 通用数据、独立 HTML 查看器与静态降级图。
+- 当前范围：Obsidian 日记内嵌互动地图、在命令触发时的光标处插入代码块、Leaflet/OpenStreetMap 与高德静态地图底图、照片缩略图点位、地图外横向照片浏览、单击大图预览及 `1×–6×` 缩放拖动、200 米连续照片聚合、Vault 内 JPEG/HEIC/PNG 的 TypeScript EXIF 解析、GeoJSON 通用数据和独立 HTML 查看器。
 - 项目边界：独立编写与构建，不依赖工作区内其他本地项目。
 - 非目标：操作系统后台任务、Apple 原生框架、原生配套 App 及 Python/Swift 外部运行时。
 - 实施基线：单日地图、Leaflet、外部 GeoJSON、可关闭的 OpenStreetMap 在线瓦片、普通滚动优先浏览文档且修饰键/捏合手势缩放地图、缺失时区不猜测、HEIC 无法显示时占位。
@@ -27,6 +27,7 @@
 - 可手动安装的 Obsidian 插件产物与独立 HTML 查看器。
 - 从笔记照片生成 GeoJSON、互动渲染与静态 SVG 导出的 TypeScript 源码。
 - 核心校验、排序、连线、路径、EXIF 时间和静态降级自动化测试。
+- 光标位置插入、照片大图浮框和高德 0.25 级细分缩放下的紧凑安全取景。
 
 ## 下一步
 

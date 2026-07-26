@@ -11,6 +11,8 @@ describe("internationalization", () => {
     expect(resolveLocale("auto", "zh-cn")).toBe("zh-CN");
     expect(createI18n("auto", "zh-cn").t("fitAll")).toBe("适配全部点位");
     expect(createI18n("auto", "zh-cn").t("zoomHint")).toContain("⌘/Ctrl");
+    expect(createI18n("auto", "zh-cn").t("openPhotoPreview")).toContain("单击");
+    expect(createI18n("auto", "zh-cn").t("photoZoomHint")).toContain("捏合");
   });
 
   it("allows an explicit language to override the host locale", () => {

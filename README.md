@@ -8,7 +8,7 @@ Footprint Map renders a local, time-ordered travel diary from photo locations in
 
 1. Install and enable the Footprint Map plugin.
 2. Open the Obsidian note where you want to generate a Footprint Map.
-3. Press `Command + P` to open the Command Palette, search for `Footprint`, and select **Footprint Map: Generate footprint from photos in the current note**. A footprint map will be generated in the original note, as shown in the preview.
+3. Place the cursor where the map should appear. Press `Command + P`, search for `Footprint`, and select **Footprint Map: Generate footprint from photos in the current note**. The generated map block is inserted at that cursor position.
 
 ### Notes
 
@@ -30,6 +30,8 @@ The following images may not appear in the Footprint Map:
 - Render with OpenStreetMap, an AMap static basemap, custom raster tiles, or no basemap.
 - Keep photo markers, the timeline, and order lines available when a basemap fails.
 - Browse every photo associated with the selected place.
+- Click a photo in the browser strip to open a large preview. Scroll or pinch to zoom from 1× to 6×, and drag the enlarged photo to inspect it; close with Escape, the backdrop, or the close button.
+- Fit AMap views in quarter-step increments while keeping photo cards visible and the integer-level static image correctly aligned.
 - Store footprint data in GeoJSON next to the note instead of a proprietary database.
 - English and Simplified Chinese interface.
 
@@ -162,7 +164,7 @@ Footprint Map 从 Obsidian 笔记引用的本地照片中读取 GPS 与带时区
 
 1. 安装并启用 Footprint Map 插件。
 2. 打开 Obsidian 中想要生成 Footprint Map 的笔记。
-3. 按 `Command + P` 打开命令面板，搜索 `Footprint`，选择 **Footprint Map：从当前笔记的照片生成足迹**，原笔记中即可生成足迹（效果如预览图）。
+3. 将光标放在地图要出现的位置，按 `Command + P` 打开命令面板，搜索 `Footprint`，选择 **Footprint Map：从当前笔记的照片生成足迹**；代码块会插入执行命令时的光标处。地图下方照片栏支持单击打开大图，滚动鼠标或双指捏合可在 `1×–6×` 之间缩放，放大后可以拖动查看；用 `Esc`、背景或关闭按钮退出。
 
 ### 注意事项
 

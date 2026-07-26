@@ -22,6 +22,23 @@ describe("AMap static map requests", () => {
     expect(url.searchParams.get("zoom")).toBe("13");
     expect(url.searchParams.get("size")).toBe("700*420");
     expect(url.searchParams.get("scale")).toBe("2");
+    expect(image.leafletImageZoom).toBe(14);
+  });
+
+  it("requests enough pixels from the next integer level for a fractional view", () => {
+    const image = createAMapStaticMapImage({
+      key: "test",
+      longitude: 102.55,
+      latitude: 24.35,
+      leafletZoom: 14.75,
+      viewportWidth: 1400,
+      viewportHeight: 840,
+    });
+    const url = new URL(image.url);
+
+    expect(url.searchParams.get("zoom")).toBe("14");
+    expect(url.searchParams.get("size")).toBe("832*499");
+    expect(image.leafletImageZoom).toBe(15);
   });
 
   it("clamps the API dimensions and zoom to supported values", () => {
@@ -37,5 +54,6 @@ describe("AMap static map requests", () => {
 
     expect(url.searchParams.get("zoom")).toBe("17");
     expect(url.searchParams.get("size")).toBe("1024*64");
+    expect(image.leafletImageZoom).toBe(18);
   });
 });

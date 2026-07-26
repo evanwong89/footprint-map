@@ -10,6 +10,11 @@ import { parseCodeBlockConfig } from "./code-block-config";
 import { FootprintRenderChild } from "./footprint-render-child";
 import { basename, dirname, resolveVaultPath } from "./vault-path";
 import { DEFAULT_SETTINGS, FootprintMapSettingTab, type FootprintMapSettings } from "./settings";
+import {
+  createFootprintBlockInsertion,
+  positionAfterInsertion,
+  positionsEqual,
+} from "./markdown-insertion";
 
 const isSupportedPhoto = (file: TFile): boolean => ["jpg", "jpeg", "heic", "png"].includes(file.extension.toLowerCase());
 
@@ -97,6 +102,7 @@ export class FootprintMapPlugin extends Plugin {
       new Notice(`Footprint Map: ${i18n.t("noMarkdownFile")}`);
       return;
     }
+    const insertionPosition = editor.getCursor("to");
     const markdown = editor.getValue();
     const linkTexts = extractEmbeddedPhotoLinks(markdown);
     const files = linkTexts.flatMap((link): TFile[] => {
@@ -135,10 +141,15 @@ export class FootprintMapPlugin extends Plugin {
 
     const source = basename(outputPath);
     if (!markdown.includes("```footprint-map")) {
-      editor.replaceRange(
-        `\n\n\`\`\`footprint-map\nsource: ${source}\nheight: 420\ntitle: ${i18n.t("generatedTitle", { name: note.basename })}\n\`\`\`\n`,
-        { line: editor.lastLine(), ch: editor.getLine(editor.lastLine()).length },
-      );
+      const insertion = createFootprintBlockInsertion({
+        source,
+        title: i18n.t("generatedTitle", { name: note.basename }),
+      });
+      const cursorStayedAtInsertionPoint = positionsEqual(editor.getCursor("to"), insertionPosition);
+      editor.replaceRange(insertion, insertionPosition);
+      if (cursorStayedAtInsertionPoint) {
+        editor.setCursor(positionAfterInsertion(insertionPosition, insertion));
+      }
     }
     new Notice(
       `Footprint Map: ${i18n.t("generatedSummary", { visits: generated.visits.length, issues: generated.issues.length })}`,
