@@ -36,6 +36,7 @@ export interface MapRenderOptions {
   amapStaticMap?: AMapStaticMapConfig;
   height?: number;
   i18n: I18n;
+  onFeedback?: () => void;
 }
 
 const toLatLng = (
@@ -171,6 +172,15 @@ export const selectTimelineVisit = (root: HTMLElement, visitId: string): void =>
   }
 };
 
+const createFeedbackAction = (i18n: I18n, onFeedback: () => void): HTMLButtonElement => {
+  const button = element("button", "footprint-map-feedback-link", i18n.t("feedbackInline"));
+  button.type = "button";
+  button.title = i18n.t("feedbackInlineAria");
+  button.setAttribute("aria-label", i18n.t("feedbackInlineAria"));
+  button.addEventListener("click", onFeedback);
+  return button;
+};
+
 interface DisplaySegment {
   source: SequenceSegment;
   from: [number, number];
@@ -218,7 +228,12 @@ export class FootprintMapController implements MapController {
     );
     const fitButton = element("button", "footprint-map-fit", i18n.t("fitAll"));
     fitButton.type = "button";
-    header.append(heading, fitButton);
+    const headerControls = element("div", "footprint-map-header-controls");
+    headerControls.append(fitButton);
+    if (options.onFeedback) {
+      headerControls.append(createFeedbackAction(i18n, options.onFeedback));
+    }
+    header.append(heading, headerControls);
 
     const mapElement = element("div", "footprint-map-canvas");
     mapElement.style.height = `${Math.min(960, Math.max(240, options.height ?? 420))}px`;

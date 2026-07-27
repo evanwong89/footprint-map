@@ -8,6 +8,7 @@ import {
   type SettingDefinitionRender,
 } from "obsidian";
 import type { LanguagePreference } from "../../i18n";
+import { openFeedbackForm } from "../../platform/feedback";
 import type { FootprintMapPlugin } from "./plugin";
 
 export type TileProviderName = "osm" | "amap" | "custom";
@@ -110,6 +111,15 @@ export class FootprintMapSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.customTileMaxZoom = value;
             await this.plugin.saveSettings();
+          })); },
+      },
+      {
+        name: i18n.t("feedback"),
+        desc: i18n.t("feedbackDesc"),
+        render: (setting) => { setting.addButton((button) => button
+          .setButtonText(i18n.t("feedbackButton"))
+          .onClick(() => {
+            openFeedbackForm(setting.settingEl.win.open.bind(setting.settingEl.win));
           })); },
       },
     ];
