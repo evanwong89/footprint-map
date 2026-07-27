@@ -33,13 +33,14 @@ The following images may not appear in the Footprint Map:
 - Click a photo in the browser strip to open a large preview. Scroll or pinch to zoom from 1× to 6×, and drag the enlarged photo to inspect it; close with Escape, the backdrop, or the close button.
 - Fit AMap views in quarter-step increments while keeping photo cards visible and the integer-level static image correctly aligned.
 - Store footprint data in GeoJSON next to the note instead of a proprietary database.
+- Share lightweight product feedback from the plugin settings or beside **Fit all places** in a rendered map header; the third-party form opens only after a user click.
 - English and Simplified Chinese interface.
 
 ## Requirements
 
 - Obsidian 1.11.5 or later.
 - Photos need GPS metadata and a timestamp with an explicit UTC offset to be imported automatically.
-- Network access is needed only for an online basemap. Footprint data and photos remain usable without one.
+- Network access is needed for an online basemap and when the user chooses to open the optional feedback form. Footprint data and photos remain usable without either.
 
 ## Installation
 
@@ -115,6 +116,8 @@ Online basemaps necessarily contact third parties:
 
 Set `tiles: false` to use no-basemap mode and avoid these basemap requests. Refer to each provider's privacy policy and terms for its own processing practices.
 
+The optional **Feedback** setting and the subtle **Feedback ↗** action beside **Fit all places** in a rendered Obsidian map header open a third-party Tally form in a separate browser page only after you click them. Footprint Map does not read or send vault contents, photos, coordinates, GeoJSON, settings, or diagnostics when opening the form. Tally receives the normal web request and any information you intentionally enter, under [Tally's privacy policy](https://tally.so/help/privacy-policy). Do not submit private photos, precise coordinates, API keys, or complete footprint files.
+
 ## Data ownership and backups
 
 GeoJSON, Markdown, and photo references remain ordinary files in your vault. Back them up as you would any other notes. Disabling or uninstalling the plugin does not delete generated files. Before running generation on important notes, keep a current backup or use version control.
@@ -176,5 +179,7 @@ Footprint Map 从 Obsidian 笔记引用的本地照片中读取 GPS 与带时区
 默认底图为 OpenStreetMap，无需 Key。中国大陆用户可以切换高德静态地图，并在 Obsidian 安全存储中选择或创建包含“Web 服务 API Key”的凭据；旧的 Web 端（JS API）Key 不能代替该 Key。高德请求只在视野稳定或拖动、缩放结束后防抖发起；点位、连线、照片和时间轴仍在本地渲染。高级用户也可以使用自定义瓦片，或设置 `tiles: false` 完全关闭在线底图。
 
 插件不包含遥测、广告或账户系统。照片与 EXIF 在本地读取；启用在线底图时，当前视野对应的瓦片请求会发送给所选地图服务商。禁用或卸载插件不会自动删除已生成的 GeoJSON 或 Markdown 内容。
+
+设置页中的可选反馈入口，以及 Obsidian 地图面板标题区右上方、“适配全部点位”旁边的次级“反馈 ↗”操作，仅在用户点击后才会在独立浏览器页面打开第三方 Tally 表单。打开表单时，Footprint Map 不会读取或发送 Vault 内容、照片、坐标、GeoJSON、设置或诊断信息；Tally 会按照其[隐私政策](https://tally.so/help/privacy-policy)接收普通网页请求以及用户主动填写的内容。请勿提交私人照片、精确坐标、API Key 或完整足迹文件。
 
 项目使用 [MIT License](LICENSE) 开源；第三方组件许可声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

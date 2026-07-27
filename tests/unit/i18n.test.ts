@@ -22,6 +22,12 @@ describe("internationalization", () => {
     expect(i18n.period("afternoon")).toBe("Afternoon");
   });
 
+  it("localizes the contextual feedback action", () => {
+    expect(createI18n("en", "en").t("feedbackInline")).toBe("Feedback ↗");
+    expect(createI18n("zh-CN", "en").t("feedbackInline")).toBe("反馈 ↗");
+    expect(createI18n("zh-CN", "en").t("feedbackInlineAria")).toContain("Tally");
+  });
+
   it("interpolates variables and preserves stable error codes", () => {
     const i18n = createI18n("en", "en");
     expect(i18n.t("visitNumber", { sequence: 3 })).toBe("Place 3");

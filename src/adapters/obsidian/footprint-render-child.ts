@@ -5,6 +5,7 @@ import {
   resolveCustomTileProvider,
   type TileProviderConfig,
 } from "../../platform/tile-provider";
+import { openFeedbackForm } from "../../platform/feedback";
 import { element } from "../../renderer/dom";
 import { FootprintMapController } from "../../renderer/map-controller";
 import type { MapController } from "../../renderer/controller";
@@ -64,6 +65,9 @@ export class FootprintRenderChild extends MarkdownRenderChild {
           } : {}),
           height: this.config.height,
           i18n: this.i18n,
+          onFeedback: () => {
+            openFeedbackForm(this.containerEl.win.open.bind(this.containerEl.win));
+          },
         });
       };
       if (!this.config.tiles) {

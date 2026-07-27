@@ -41,9 +41,15 @@
   padding: 7px 13px;
 }
 
-.footprint-map-header-controls { align-items: center; display: flex; gap: 6px; }
-.footprint-map-header-controls .footprint-map-fit:first-child,
-.footprint-map-header-controls .footprint-map-fit:nth-child(2) { font-size: 20px; height: 38px; padding: 0; width: 38px; }
+.footprint-map-header-controls {
+  align-items: center;
+  align-self: flex-end;
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
 .footprint-map-canvas {
   background: #eeeae1;
   border: 1px solid var(--fm-border);
@@ -269,6 +275,38 @@
 .footprint-map-visit-label { font-size: calc(1em - 2px); font-weight: 400; line-height: 1.25; }
 .footprint-map-timeline li.is-selected .footprint-map-time { color: var(--fm-ink); font-weight: 600; }
 .footprint-map-timeline li.is-selected .footprint-map-visit-label { font-size: 1em; font-weight: 700; }
+.footprint-map-header-controls .footprint-map-feedback-link {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--fm-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 400;
+  height: auto;
+  margin: 0 14px 0 0;
+  min-height: 0;
+  opacity: .72;
+  padding: 7px 4px;
+  white-space: nowrap;
+}
+.footprint-map-header-controls .footprint-map-feedback-link:hover {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--fm-accent);
+  opacity: 1;
+  text-decoration: underline;
+}
+.footprint-map-header-controls .footprint-map-feedback-link:focus-visible {
+  border-radius: 4px;
+  opacity: 1;
+  outline: 2px solid var(--interactive-accent, #e2673d);
+  outline-offset: 2px;
+}
 .footprint-map-issues,
 .footprint-map-error { background: #fff3d8; border: 1px solid #e0ba68; border-radius: 10px; margin-top: 12px; padding: 10px 14px; }
 .footprint-map-issues p { margin: 3px 0; }
@@ -284,6 +322,7 @@
   .footprint-map-standalone { padding: 8px; }
   .footprint-map-standalone main { border-radius: 12px; padding: 12px; }
   .footprint-map-header { align-items: flex-start; flex-direction: column; }
+  .footprint-map-header-controls { align-self: stretch; }
   .footprint-map-timeline ol { display: grid; gap: 10px; }
   .footprint-map-source-form { align-items: stretch; flex-direction: column; }
 }
